@@ -1,4 +1,3 @@
-
 // Vertex Shader
 export const vertexShader = `
 varying vec2 vUv;
@@ -8,12 +7,53 @@ void main() {
 }
 `;
 
-// Glossy gradient fragment shader for the overlay
+// Trail shader — mouse trail into ping-pong buffers
+export const trailShader = `
+uniform sampler2D u_prev;
+uniform vec2  u_mouse;
+uniform vec2  u_prevMouse;
+uniform vec2  u_resolution;
+uniform float u_fade;
+uniform float u_radius;
+uniform float u_isMoving;
+varying vec2 vUv;
+
+void main() {
+    vec2 uv = vUv;
+    vec2 texel = 1.0 / u_resolution;
+
+    vec4 prev = texture2D(u_prev, uv) * 0.5
+              + texture2D(u_prev, uv + vec2(texel.x, 0.0))  * 0.125
+              + texture2D(u_prev, uv - vec2(texel.x, 0.0))  * 0.125
+              + texture2D(u_prev, uv + vec2(0.0, texel.y))   * 0.125
+              + texture2D(u_prev, uv - vec2(0.0, texel.y))   * 0.125;
+
+    prev *= u_fade;
+
+    if (u_isMoving > 0.5) {
+        float aspect = u_resolution.x / u_resolution.y;
+        vec2 a = u_prevMouse;
+        vec2 b = u_mouse;
+        vec2 pa = vec2((uv.x - a.x) * aspect, uv.y - a.y);
+        vec2 ba = vec2((b.x - a.x) * aspect, b.y - a.y);
+        float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+        float d = length(pa - ba * h);
+        float stroke = smoothstep(u_radius, u_radius * 0.3, d);
+        prev.r = max(prev.r, stroke);
+    }
+
+    prev.r = clamp(prev.r, 0.0, 1.0);
+    gl_FragColor = vec4(prev.r, prev.r, prev.r, 1.0);
+}
+`;
+
+// Glossy gradient fragment shader with mouse trail
 export const fragmentShader = `
 uniform float u_time;
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_strength;
+uniform sampler2D u_trail;
 varying vec2 vUv;
 
 float hash(vec2 p) {
@@ -31,6 +71,18 @@ float noise(vec2 p) {
     return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
+// Animated palette
+vec3 palette(float t) {
+    // cold colors: blue, cyan, teal, dark blue
+    vec3 a = vec3(0.08, 0.18, 0.28); // base (dark blue)
+    vec3 b = vec3(0.10, 0.35, 0.45); // amplitude (cyan/teal)
+    vec3 c = vec3(0.85, 0.95, 0.75); // frequency
+    vec3 d = vec3(0.10, 0.20, 0.30); // phase
+    float speed = 0.10;
+    float phase = u_time * speed;
+    return a + b * cos(6.28318 * (c * t + d + phase));
+}
+
 void main() {
     vec2 uv = vUv;
     vec2 mouseUV = u_mouse;
@@ -38,47 +90,45 @@ void main() {
     p.x *= u_resolution.x / u_resolution.y;
     p += (mouseUV - 0.5) * 0.12;
 
-    vec3 c1 = vec3(0.04, 0.04, 0.08);
-    vec3 c2 = vec3(0.06, 0.10, 0.18);
-    vec3 c3 = vec3(0.12, 0.08, 0.06);
-
-    float sweep = smoothstep(-0.6, 0.6, p.y + 0.2 * sin(u_time * 0.2));
-    vec3 base = mix(c1, c2, sweep);
-    base = mix(base, c3, smoothstep(0.15, 0.85, uv.x) * 0.2);
+    float t = smoothstep(-0.6, 0.6, p.y + 0.2 * sin(u_time * 0.2));
+    vec3 base = palette(t);
 
     vec3 n = normalize(vec3(p * 1.4, 0.8));
     vec3 l = normalize(vec3(-0.35, 0.85, 0.6));
-    float spec = pow(max(dot(n, l), 0.0), 64.0);
-    float fresnel = pow(1.0 - max(dot(n, vec3(0.0, 0.0, 1.0)), 0.0), 2.5);
+    float spec = pow(max(dot(n, l), 0.0), 48.0);
+    float fresnel = pow(1.0 - max(dot(n, vec3(0.0, 0.0, 1.0)), 0.0), 2.0);
 
     vec2 ld = normalize(vec2(0.8, 0.6));
-    float streak = exp(-abs(dot(p, vec2(-ld.y, ld.x))) * 22.0);
-    streak *= 0.2 + 0.1 * sin(u_time * 0.25);
+    float streak = exp(-abs(dot(p, vec2(-ld.y, ld.x))) * 18.0);
+    streak *= 0.35 + 0.15 * sin(u_time * 0.25);
 
-    float sparkle = noise(uv * 6.0 + u_time * 0.15) * 0.02;
-    float glow = smoothstep(0.65, 0.0, distance(uv, mouseUV));
-    float glow2 = smoothstep(0.9, 0.0, distance(uv, mouseUV));
-    vec3 color = base + vec3(spec * 0.4 + streak * 0.15 + sparkle);
-    color += vec3(0.15, 0.25, 0.45) * glow * 1.4;
-    color += vec3(0.06, 0.10, 0.20) * glow2 * 0.6;
-    color += fresnel * 0.06;
-    color = mix(color, color + vec3(0.03, 0.05, 0.08), u_strength * 0.5);
+    float sparkle = noise(uv * 6.0 + u_time * 0.15) * 0.5;
+    float glow = smoothstep(0.35, 0.0, distance(uv, mouseUV));
 
-    // black vignette (on top of everything — increases alpha at edges)
+    // mouse trail glow from ping-pong buffer
+    float trail = texture2D(u_trail, uv).r;
+    float trailGlow = trail * 0.6;
+
+    vec3 color = base + vec3(spec * 0.9 + streak + sparkle);
+    color += vec3(0.10, 0.35, 0.42) * glow;
+    color += vec3(0.10, 0.35, 0.42) * trailGlow;
+    color += fresnel * 0.12;
+    color = mix(color, color + vec3(0.08, 0.12, 0.18), u_strength * 0.5);
+
+    // black vignette
     vec2 vig = uv - 0.5;
-    float vignette = 1.0 - dot(vig, vig) * 1.8;
+    vig.x *= u_resolution.x / u_resolution.y * 0.7;
+    float vignette = 1.0 - dot(vig, vig) * 1.0;
     vignette = clamp(vignette, 0.0, 1.0);
-    vignette = smoothstep(0.0, 0.6, vignette);
+    vignette = pow(vignette, 4.8);
     color *= vignette;
-    float vigAlpha = 1.0 - vignette; // edges become fully opaque black
+    float vigAlpha = 1.0 - vignette;
 
-    // film grain (static, on top of everything)
+    // film grain (static)
     float grain = hash(uv * u_resolution) - 0.5;
-    color += grain * 0.07;
-    float grainAlpha = 0.45 + abs(grain) * 0.55;
+    color += grain * 0.04;
 
-    float finalAlpha = max(grainAlpha, vigAlpha);
-    gl_FragColor = vec4(color, finalAlpha);
+    gl_FragColor = vec4(color, max(0.85, vigAlpha));
 }
 `;
 
@@ -178,10 +228,10 @@ varying vec2 vUv;
 
 // Color palette for fluid visualization
 vec3 palette(float t) {
-    vec3 a = vec3(0.5, 0.5, 0.5);
-    vec3 b = vec3(0.5, 0.5, 0.5);
+    vec3 a = vec3(0.5, 0.9, 0.1);
+    vec3 b = vec3(0.6, 0.1, 0.4);
     vec3 c = vec3(1.0, 1.0, 1.0);
-    vec3 d = vec3(0.0, 0.33, 0.67);
+    vec3 d = vec3(0.0, 0.93, 0.67);
     return a + b * cos(6.28318 * (c * t + d));
 }
 
@@ -211,7 +261,7 @@ void main() {
     color += vec3(0.2, 0.6, 1.0) * mouseInfluence * 0.5;
 
     // Background gradient
-    vec3 bg = mix(vec3(0.05, 0.05, 0.1), vec3(0.1, 0.1, 0.2), uv.y);
+    vec3 bg = mix(vec3(0.05, 0.15, 0.1), vec3(0.1, 0.1, 0.2), uv.y);
     color = mix(bg, color, magnitude * 2.0 + 0.2);
 
     gl_FragColor = vec4(color, 1.0);
