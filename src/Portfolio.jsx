@@ -1,10 +1,6 @@
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import './App.css'
-import ShaderBackground from './ShaderBackground'  // ← Обычный импорт
+import { Link } from 'react-router-dom';
 
-
-export default function App() {
+export default function Portfolio() {
   return (
     <div className="relative isolate min-h-screen bg-transparent">
       <div
@@ -26,9 +22,7 @@ export default function App() {
           />
         ))}
       </div>
-
-      {/* Замени пустой div на компонент */}
-      <ShaderBackground />
+      <div className="gradient-canvas fixed inset-0 z-10 pointer-events-none" />
 
       <header className="relative z-20 flex ps-8 pt-8 pb-2">
         <Link to="/">
@@ -64,24 +58,21 @@ export default function App() {
         </li>
       </nav>
 
-      {/** Flicker title **/}
-      {(() => {
-        const letters = ['M','a','s','s','a','g','e',' ','S','a','L','o','n'];
-        const delays = useMemo(() => letters.map(() => Math.random() * 15.0), []);
-        return (
-          <h1 className="glow-text fixed inset-0 z-20 flex items-center justify-center text-6xl font-extralight tracking-[1em] uppercase pointer-events-none" style={{ fontFamily: "'Yanone Kaffeesatz', sans-serif" }}>
-            {letters.map((char, i) =>
-              <span
-                key={i}
-                className="flicker"
-                style={{ animationDelay: `${delays[i]}s` }}
-              >
-                {char === ' ' ? '\u00A0' : char}
-              </span>
-            )}
-          </h1>
-        );
-      })()}
+      <main className="relative z-20 max-w-6xl mx-auto px-8 py-16">
+        <h1 className="text-5xl font-light text-white mb-12 tracking-wide">Портфолио</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <div key={item} className="backdrop-blur-sm bg-white/10 rounded-lg border border-white/20 overflow-hidden group">
+              <div className="aspect-square bg-gradient-to-br from-gray-400 to-gray-600 group-hover:scale-105 transition-transform" />
+              <div className="p-4">
+                <h3 className="text-white font-light">Работа #{item}</h3>
+                <p className="text-gray-300 text-sm">Массаж и процедуры</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   );
 }
