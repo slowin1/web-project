@@ -11,5 +11,7 @@ import "/css/work.css";
 import "/css/project.css";
 import "/css/contact.css";
 import "/css/footer.css";
+import "/css/login.css";
+import "/css/forgot-password.css";
 
 createRoot(document.getElementById("root")).render(<App />);

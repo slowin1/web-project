@@ -65,3 +65,25 @@ nav .nav-logo a svg path {
 nav .nav-location ion-icon {
   color: var(--bg);
 }
+
+.nav-signin {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  z-index: 11;
+}
+
+.nav-signin a {
+  color: var(--fg);
+  transition: opacity 0.3s ease;
+}
+
+.nav-signin a:hover {
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .nav-signin {
+    display: none;
+  }
+}

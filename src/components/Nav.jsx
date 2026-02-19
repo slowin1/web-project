@@ -42,6 +42,7 @@ export default function Nav({ location = "Chisinau, MD" }) {
           </p>
         </div>
       </div>
+
     </nav>
   );
 }

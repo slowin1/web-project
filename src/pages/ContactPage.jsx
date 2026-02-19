@@ -1,23 +1,7 @@
 export default function ContactPage() {
   return (
     <>
-
-    <div className="transition-grid">
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-    </div>
-
-    <section className="contact-visual">
+      <section className="contact-visual">
       <div className="contact-visual-icon">
         <img src="/contact/icon_1.svg" alt="" />
       </div>

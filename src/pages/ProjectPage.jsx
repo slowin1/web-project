@@ -1,25 +1,12 @@
+
+import Footer from "../components/Footer";
+
 export default function ProjectPage() {
   return (
     <>
-
-    <div className="transition-grid">
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-      <div className="transition-block"></div>
-    </div>
-
-    <section className="project-hero">
+      <section className="project-hero">
       <div className="project-hero-img">
-        <img src="/project/project_2.jpg" alt="" />
+        <img src="/project/project_1.png" alt="" />
       </div>
 
       <div className="project-hero-copy">
@@ -30,7 +17,7 @@ export default function ProjectPage() {
               data-animate-on-scroll="false"
               data-animate-delay="0.1"
             >
-              Silent<br />Offset
+              Шведский массаж<br />500 лей 30 минут
             </h1>
             <p
               data-animate-variant="slide"
@@ -38,7 +25,7 @@ export default function ProjectPage() {
               data-animate-on-scroll="false"
               data-animate-delay="0.75"
             >
-              Symmetry without collapse
+              Классический шведский массаж, который сочетает в себе различные техники для расслабления мышц и улучшения кровообращения. Идеально подходит для снятия напряжения и общего расслабления.
             </p>
           </div>
 
@@ -175,15 +162,15 @@ export default function ProjectPage() {
     <section className="project-images">
       <div className="container">
         <div className="project-img">
-          <img src="/project/project_1.jpg" alt="" />
+          <img src="/project/project_2.jpg" alt="" />
+        </div>
+
+        <div className="project-img">
+          <img src="/project/project_3.jpg" alt="" />
         </div>
 
         <div className="project-img">
           <img src="/project/project_4.jpg" alt="" />
-        </div>
-
-        <div className="project-img">
-          <img src="/project/project_5.jpg" alt="" />
         </div>
       </div>
     </section>
@@ -275,59 +262,7 @@ export default function ProjectPage() {
       </div>
     </section>
 
-    <footer>
-      <div className="footer-container">
-        <div className="footer-content">
-          <div className="footer-row">
-            <div className="footer-col">
-              <h2>Deadspace</h2>
-            </div>
-
-            <div className="footer-col">
-              <div className="footer-sub-col">
-                <a href="/"><h3>Главная</h3></a>
-                <a href="/lab"><h3>Услуги</h3></a>
-                <a href="/work"><h3>работы</h3></a>
-                <a href="/project"><h3>Проекты</h3></a>
-                <a href="/contact"><h3>Контакты</h3></a>
-              </div>
-
-              <div className="footer-sub-col">
-                <a
-                  href="https://x.com/codegridweb"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Twitter</a
-                >
-                <a
-                  href="https://www.instagram.com/clavik_nagoreanskii/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Instagram</a
-                >
-                <a
-                  href="https://codegrid.gumroad.com/l/codegridpro"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Gumroad</a
-                >
-                <a
-                  href="https://www.youtube.com/@codegrid"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >YouTube</a
-                >
-              </div>
-            </div>
-          </div>
-
-          <div className="footer-row">
-            <p className="type-mono">MWT 19 Februaty ’26</p>
-            <p className="type-mono">[ Engineered by clavik ]</p>
-          </div>
-        </div>
-      </div>
-    </footer>
+    <Footer />
 
     <svg
       viewBox="0 0 0 0"

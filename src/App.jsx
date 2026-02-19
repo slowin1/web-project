@@ -5,6 +5,10 @@ import LabPage from "./pages/LabPage";
 import ProjectPage from "./pages/ProjectPage";
 import WorkPage from "./pages/WorkPage";
 import Layout from "./components/Layout";
+import LogIn from "./pages/LogIn";
+import ProfilePage from "./pages/Profile";
+import AdminPage from "./pages/Admin";
+import ForgotPassword from "./pages/ForgotPassword";
 
 
 const HOME_MODULES = [
@@ -28,7 +32,6 @@ const LAB_MODULES = [
   "/js/pie-transition.js",
   "/js/stats.js",
   "/js/clients.js",
-  "/js/footer.js",
 ];
 
 const WORK_MODULES = [
@@ -38,7 +41,6 @@ const WORK_MODULES = [
   "/js/menu.js",
   "/js/animated-copy.js",
   "/js/work.js",
-  "/js/footer.js",
 ];
 
 const PROJECT_MODULES = [
@@ -48,7 +50,6 @@ const PROJECT_MODULES = [
   "/js/menu.js",
   "/js/animated-copy.js",
   "/js/project.js",
-  "/js/footer.js",
 ];
 
 const CONTACT_MODULES = [
@@ -58,6 +59,38 @@ const CONTACT_MODULES = [
   "/js/menu.js",
   "/js/animated-copy.js",
   "/js/contact.js",
+];
+
+const LOG_IN_MODULES = [
+  "/js/lenis-scroll.js",
+  "/js/transition.js",
+  "/js/nav.js",
+  "/js/menu.js",
+  "/js/animated-copy.js",
+];
+
+const PROFILE_MODULES = [
+  "/js/lenis-scroll.js",
+  "/js/transition.js",
+  "/js/nav.js",
+  "/js/menu.js",
+  "/js/animated-copy.js",
+];
+
+const ADMIN_MODULES = [
+  "/js/lenis-scroll.js",
+  "/js/transition.js",
+  "/js/nav.js",
+  "/js/menu.js",
+  "/js/animated-copy.js",
+];
+
+const FORGOT_PASSWORD_MODULES = [
+  "/js/lenis-scroll.js",
+  "/js/transition.js",
+  "/js/nav.js",
+  "/js/menu.js",
+  "/js/animated-copy.js",
 ];
 
 function applyTransitionState() {
@@ -120,7 +153,7 @@ function HomePage() {
 
   useEffect(() => {
     document.title = "Массажка";
-    
+
     if (!modulesLoadedRef.current) {
       modulesLoadedRef.current = true;
       loadPageModules(HOME_MODULES)
@@ -258,33 +291,7 @@ function App() {
           }
         />
         <Route
-          path="/lab.html"
-          element={
-            <Layout>
-              <RoutedPage
-                title="Lab"
-                modulePaths={LAB_MODULES}
-                component={LabPage}
-                clearOverflow
-              />
-            </Layout>
-          }
-        />
-        <Route
           path="/work"
-          element={
-            <Layout>
-              <RoutedPage
-                title="Work"
-                modulePaths={WORK_MODULES}
-                component={WorkPage}
-                clearOverflow
-              />
-            </Layout>
-          }
-        />
-        <Route
-          path="/work.html"
           element={
             <Layout>
               <RoutedPage
@@ -310,19 +317,6 @@ function App() {
           }
         />
         <Route
-          path="/project.html"
-          element={
-            <Layout>
-              <RoutedPage
-                title="Project"
-                modulePaths={PROJECT_MODULES}
-                component={ProjectPage}
-                clearOverflow
-              />
-            </Layout>
-          }
-        />
-        <Route
           path="/contact"
           element={
             <Layout>
@@ -336,18 +330,57 @@ function App() {
           }
         />
         <Route
-          path="/contact.html"
+          path="/LogIn"
           element={
             <Layout>
               <RoutedPage
-                title="Contact"
-                modulePaths={CONTACT_MODULES}
-                component={ContactPage}
+                title="Log In"
+                modulePaths={LOG_IN_MODULES}
+                component={LogIn}
                 clearOverflow
               />
             </Layout>
           }
         />
+          <Route
+            path="/profile"
+            element={
+              <Layout>
+                <RoutedPage
+                  title="Profile"
+                  modulePaths={PROFILE_MODULES}
+                  component={ProfilePage}
+                  clearOverflow
+                />
+              </Layout>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <Layout>
+                <RoutedPage
+                  title="Admin"
+                  modulePaths={ADMIN_MODULES}
+                  component={AdminPage}
+                  clearOverflow
+                />
+              </Layout>
+            }
+          />
+           <Route
+            path="/forgot-password"
+            element={
+              <Layout>
+                <RoutedPage
+                  title="ForgotPassword"
+                  modulePaths={FORGOT_PASSWORD_MODULES}
+                  component={ForgotPassword}
+                  clearOverflow
+                />
+              </Layout>
+            }
+          />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
