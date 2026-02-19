@@ -5,31 +5,33 @@ const canvas = document.getElementById("skyline");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const pixelRatioLimit = isMobile ? 1.0 : 1.25;
 
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: false,
-  powerPreference: "high-performance",
-  stencil: false,
-  depth: false,
-});
+// Only initialize if canvas exists
+if (canvas) {
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: false,
+    powerPreference: "high-performance",
+    stencil: false,
+    depth: false,
+  });
 
-const scene = new THREE.Scene();
-const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-const geometry = new THREE.PlaneGeometry(2, 2);
-const material = new THREE.ShaderMaterial({
-  uniforms: {
-    iTime: { value: 0 },
-    iResolution: { value: new THREE.Vector3() },
-  },
-  vertexShader: `
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      iTime: { value: 0 },
+      iResolution: { value: new THREE.Vector3() },
+    },
+    vertexShader: `
     varying vec2 vUv;
     void main() {
       vUv = uv;
       gl_Position = vec4(position, 1.0);
     }
   `,
-  fragmentShader: `
+    fragmentShader: `
     #ifdef GL_FRAGMENT_PRECISION_HIGH
       precision highp float;
     #else
@@ -61,37 +63,37 @@ const material = new THREE.ShaderMaterial({
     vec3 Buildings(vec2 uv, int layer) {
       seed = uint(2. + uv.x/4.);
       uv.x = (fract(uv.x/4.)-.5)*4.;
-      
+
       bool cull = (pow(float(layer+1)/8.,.3) < rand());
       seed += 0x1001U*uint(layer);
-      
+
       float a = Polygon(uv-vec2(0,0), 0.);
       float b = Polygon(uv-vec2(0,2), .5);
       float c = Polygon(uv-vec2(0,4), 1.);
       if (cull) { a = 1.; b = 1.; c = 1.; }
-      
+
       a = min(a, uv.y+.5);
-      
+
       vec3 f = vec3(a,min(a,b),min(min(a,b),c)).zyx;
       vec3 col = vec3(.5+.5*f/(.01+abs(f)));
-      
+
       return vec3(dot(col,vec3(.985,.01,.005)));
     }
 
     void main() {
       vec2 fragCoord = vUv * iResolution.xy;
       vec2 uv = (fragCoord-iResolution.xy*vec2(.5,.5))/iResolution.y;
-      
+
       uv *= 10.;
       uv.y += 3.;
       uv.x -= 8.;
-      
+
       vec3 color = vec3(1);
-      
+
       const float size = .5;
       const float fog = .15;
-      const float baseFog = 0.075; 
-      
+      const float baseFog = 0.075;
+
       color = min(color, mix(vec3(1), Buildings(uv*exp2(size*0.)+iTime*vec2(4,0),0), exp2(-fog*0.-baseFog)));
       color = min(color, mix(vec3(1), Buildings(uv*exp2(size*1.)+iTime*vec2(4,0),1), exp2(-fog*1.-baseFog)));
       color = min(color, mix(vec3(1), Buildings(uv*exp2(size*2.)+iTime*vec2(4,0),2), exp2(-fog*2.-baseFog)));
@@ -104,54 +106,55 @@ const material = new THREE.ShaderMaterial({
       color = min(color, mix(vec3(1), Buildings(uv*exp2(size*9.)+iTime*vec2(4,0),9), exp2(-fog*9.-baseFog)));
       color = min(color, mix(vec3(1), Buildings(uv*exp2(size*10.)+iTime*vec2(4,0),10), exp2(-fog*10.-baseFog)));
       color = min(color, mix(vec3(1), Buildings(uv*exp2(size*11.)+iTime*vec2(4,0),11), exp2(-fog*11.-baseFog)));
-      
+
       color = pow(color, vec3(1./2.2));
-      
+
       const vec3 bgColor = vec3(0.7843, 0.8118, 0.7843);
       color = mix(bgColor, vec3(0.0), 1.0 - color.r);
-      
+
       gl_FragColor = vec4(color, 1.0);
     }
   `,
-  depthTest: false,
-  depthWrite: false,
-});
+    depthTest: false,
+    depthWrite: false,
+  });
 
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
 
-// resize handler with debounce
-let resizeTimeout;
+  // resize handler with debounce
+  let resizeTimeout;
 
-function handleResize() {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioLimit));
-    material.uniforms.iResolution.value.set(width, height, 1);
-  }, 100);
-}
+  function handleResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioLimit));
+      material.uniforms.iResolution.value.set(width, height, 1);
+    }, 100);
+  }
 
-// animation loop
-function animate(currentTime) {
+  // animation loop
+  function animate(currentTime) {
+    requestAnimationFrame(animate);
+    material.uniforms.iTime.value = currentTime * 0.001;
+    renderer.render(scene, camera);
+  }
+
+  // cleanup on page unload
+  function cleanup() {
+    geometry.dispose();
+    material.dispose();
+    renderer.dispose();
+    window.removeEventListener("resize", handleResize);
+    window.removeEventListener("beforeunload", cleanup);
+  }
+
+  // initialize
+  handleResize();
+  window.addEventListener("resize", handleResize);
+  window.addEventListener("beforeunload", cleanup);
   requestAnimationFrame(animate);
-  material.uniforms.iTime.value = currentTime * 0.001;
-  renderer.render(scene, camera);
 }
-
-// cleanup on page unload
-function cleanup() {
-  geometry.dispose();
-  material.dispose();
-  renderer.dispose();
-  window.removeEventListener("resize", handleResize);
-  window.removeEventListener("beforeunload", cleanup);
-}
-
-// initialize
-handleResize();
-window.addEventListener("resize", handleResize);
-window.addEventListener("beforeunload", cleanup);
-requestAnimationFrame(animate);
