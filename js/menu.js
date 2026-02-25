@@ -17,7 +17,7 @@ const MENU_ITEMS = [
   { label: "Проекты", icon: "flash-sharp", href: "/project" },
   { label: "Контакты", icon: "paper-plane-sharp", href: "/contact" },
   { label: "Регистрация", icon: "log-in-outline", href: "/LogIn" },
-  { label: "Еще какая-то залупа", icon: "log-in-outline", href: "/LogIn" },
+  { label: "Еще чето", icon: "log-in-outline", href: "/LogIn" },
 ];
 
 let isOpen = false;

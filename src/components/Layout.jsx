@@ -1,6 +1,7 @@
 import Nav from "./Nav";
-import Hamburger from "./Hamburger";
+
 import TransitionGrid from "./TransitionGrid";
+import Hamburger from "./Hamburger";
 
 export default function Layout({ children }) {
   return (
@@ -8,6 +9,7 @@ export default function Layout({ children }) {
       <TransitionGrid />
       <Nav location="Chishinau, MD" />
       <Hamburger />
+
       {children}
     </>
   );
