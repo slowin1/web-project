@@ -17,6 +17,7 @@ export const matrixShader = {
     uniform float iTime;
     uniform vec3 uColorBg;
     uniform vec3 uColorFg;
+    uniform float uIsDark;
     varying vec2 vUv;
 
     int cA[15] = int[](1,1,1,0,0,1,1,1,1,1,0,1,1,1,1);

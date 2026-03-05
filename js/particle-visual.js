@@ -1,7 +1,7 @@
 // webgl particle system with mouse distortion
 const PV = {
   config: {
-    canvasBg: "#C8CFC8",
+    canvasBg: { light: "#E7E5E4", dark: "#E7E5E4" },
     logoSize: 2000,
     distortionRadius: 2000,
     forceStrength: 0.05,
@@ -22,6 +22,7 @@ const PV = {
   isMobile: false,
   animFrame: null,
   isAnimating: false,
+  themeObserver: null,
 };
 
 // initialization
@@ -58,6 +59,7 @@ function init() {
     document.addEventListener("mousemove", handleMouseMove, { passive: true });
   }
   window.addEventListener("resize", handleResize);
+  setupThemeListener();
 }
 
 // shader setup
@@ -233,9 +235,9 @@ function animate() {
 
 // webgl render
 function render() {
-  const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
-    PV.config.canvasBg,
-  );
+  const isDark = document.documentElement.classList.contains("dark");
+  const bgColor = isDark ? PV.config.canvasBg.dark : PV.config.canvasBg.light;
+  const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(bgColor);
   PV.gl.viewport(0, 0, PV.canvas.width, PV.canvas.height);
   PV.gl.clearColor(
     parseInt(rgb[1], 16) / 255,
@@ -296,4 +298,17 @@ function handleResize() {
 
   PV.gl.bindBuffer(PV.gl.ARRAY_BUFFER, PV.geometry.posBuf);
   PV.gl.bufferSubData(PV.gl.ARRAY_BUFFER, 0, PV.posArray);
+}
+
+// theme change listener
+function setupThemeListener() {
+  PV.themeObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "attributes" && mutation.attributeName === "class") {
+        // Theme changed - colors are automatically picked up in render()
+      }
+    });
+  });
+
+  PV.themeObserver.observe(document.documentElement, { attributes: true });
 }
