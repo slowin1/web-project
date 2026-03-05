@@ -5,12 +5,12 @@ nav {
   width: 100%;
   display: flex;
   z-index: 10;
-  mix-blend-mode: difference;
 }
 
 nav .container {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
 }
 
 nav .nav-clock,
@@ -21,6 +21,9 @@ nav .nav-location {
 
 nav .nav-clock {
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 nav .nav-location {
@@ -28,6 +31,7 @@ nav .nav-location {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 1rem;
 }
 
 nav .nav-location ion-icon {
@@ -55,15 +59,32 @@ nav .nav-location ion-icon {
 
 nav .nav-clock p,
 nav .nav-location p {
-  color: var(--bg);
+  color: var(--fg);
+}
+
+nav .nav-location .theme-toggle {
+  color: var(--fg);
+  border-color: var(--fg);
+}
+
+nav .nav-location .theme-toggle .toggle-label {
+  color: var(--fg);
+}
+
+nav .nav-location .theme-toggle .toggle-switch {
+  background-color: rgba(128, 128, 128, 0.5);
+}
+
+nav .nav-location .theme-toggle .toggle-slider {
+  background-color: var(--fg);
 }
 
 nav .nav-logo a svg path {
-  fill: var(--bg);
+  fill: var(--fg);
 }
 
 nav .nav-location ion-icon {
-  color: var(--bg);
+  color: var(--fg);
 }
 
 .nav-signin {

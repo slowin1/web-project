@@ -1,3 +1,8 @@
+/* Lab page specific body background */
+body:has(.lab-page) {
+  background-color: var(--bg_lab) !important;
+}
+
 #particle-canvas {
   position: absolute;
   top: 0;
@@ -23,7 +28,7 @@
 }
 
 .lab-hero h1 {
-  color: var(--fg);
+  color: var(--bg);
 }
 
 .lab-hero .lab-hero-overlay {
@@ -32,10 +37,11 @@
   left: 0;
   width: 100%;
   height: 100svh;
-  background-color: var(--fg);
+  background-color: var(--bg_lab);
   opacity: 0;
   will-change: opacity;
   z-index: 1;
+  transition: background-color 0.3s ease;
 }
 
 .lab-hero .lab-about-revealer {
@@ -53,6 +59,7 @@
   background-color: var(--fg);
   color: var(--bg);
   padding: 1rem 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .lab-about .container {
@@ -65,8 +72,9 @@
   position: relative;
   width: 100%;
   height: 100svh;
-  background-color: var(--fg);
+  background-color: var(--bg);
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 .pie-transition-outro-header {
@@ -77,7 +85,7 @@
   text-align: center;
   width: 50%;
   max-width: 1600px;
-  color: var(--fg);
+  color: var(--bg);
   z-index: 1;
 }
 
@@ -104,7 +112,8 @@
   width: 100%;
   display: flex;
   justify-content: space-between;
-  background: black;
+  background: var(--fg);
+  transition: background 0.3s ease;
 }
 
 .stats .stats-header {

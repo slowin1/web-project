@@ -10,6 +10,14 @@
     <link rel="icon" type="image/png" href="/site-icon.png" />
 
     <script>
+      // Apply theme immediately before page renders
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    </script>
+
+    <script>
       const path = window.location.pathname.replace(/\/+$/, "") || "/";
       const isHomePath =
         path === "/" || path === "/index" || path === "/index.html";

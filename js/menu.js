@@ -7,8 +7,13 @@ gsap.registerPlugin(SplitText);
 
 // configuration
 const CONFIG = {
-  colors: { bg: "#C8CFC8", fg: "#04131e" },
+  colors: {
+    light: { bg: "#C8CFC8", fg: "#04131e" },
+    dark: { bg: "#1D293D", fg: "#6A7282" },
+  },
 };
+
+let currentTheme = "light";
 
 const MENU_ITEMS = [
   { label: "Главная", icon: "compass-sharp", href: "/" },
@@ -184,8 +189,14 @@ function initAtmosphere() {
   atmosphereRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   const geometry = new THREE.PlaneGeometry(2, 2);
-  const bgColor = hexToRgb(CONFIG.colors.bg);
-  const fgColor = hexToRgb(CONFIG.colors.fg);
+
+  // Get current theme from localStorage (more reliable than classList)
+  const savedTheme = localStorage.getItem("theme");
+  const isDark = savedTheme === "dark";
+  currentTheme = isDark ? "dark" : "light";
+  const colors = CONFIG.colors[currentTheme];
+  const bgColor = hexToRgb(colors.bg);
+  const fgColor = hexToRgb(colors.fg);
 
   atmosphereMaterial = new THREE.ShaderMaterial({
     vertexShader: matrixShader.vertexShader,
@@ -195,6 +206,7 @@ function initAtmosphere() {
       iResolution: { value: new THREE.Vector2() },
       uColorBg: { value: new THREE.Vector3(bgColor.r, bgColor.g, bgColor.b) },
       uColorFg: { value: new THREE.Vector3(fgColor.r, fgColor.g, fgColor.b) },
+      uIsDark: { value: isDark ? 1.0 : 0.0 },
     },
   });
 
@@ -203,6 +215,9 @@ function initAtmosphere() {
 
   resizeAtmosphere();
   animateAtmosphere();
+
+  // Listen for theme changes
+  setupThemeListener();
 }
 
 function resizeAtmosphere() {
@@ -217,6 +232,31 @@ function animateAtmosphere() {
   atmosphereMaterial.uniforms.iTime.value += 0.016;
   atmosphereRenderer.render(atmosphereScene, atmosphereCamera);
   requestAnimationFrame(animateAtmosphere);
+}
+
+// theme change listener
+function setupThemeListener() {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "attributes" && mutation.attributeName === "class") {
+        const isDark = document.documentElement.classList.contains("dark");
+        const newTheme = isDark ? "dark" : "light";
+
+        if (newTheme !== currentTheme) {
+          currentTheme = newTheme;
+          const colors = CONFIG.colors[currentTheme];
+          const bgColor = hexToRgb(colors.bg);
+          const fgColor = hexToRgb(colors.fg);
+
+          atmosphereMaterial.uniforms.uColorBg.value.set(bgColor.r, bgColor.g, bgColor.b);
+          atmosphereMaterial.uniforms.uColorFg.value.set(fgColor.r, fgColor.g, fgColor.b);
+          atmosphereMaterial.uniforms.uIsDark.value = isDark ? 1.0 : 0.0;
+        }
+      }
+    });
+  });
+
+  observer.observe(document.documentElement, { attributes: true });
 }
 
 // segment geometry - calculates SVG path for pie slice segments

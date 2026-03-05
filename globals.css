@@ -30,10 +30,17 @@
 
 :root {
   --bg: #C8CFC8;
-  --fg: #000000;
+  --fg: #313131;
+  --bg_lab: #233e5b;
   --type-1: "De Fonte Plus", sans-serif;
   --type-2: "Russian", sans-serif;
   --type-3: "DM Mono", monospace;
+}
+
+html.dark {
+  --bg: #0a0a0a;
+  --fg: #c2c2c2;
+  --bg_lab: #3E3B37;
 }
 
 * {
@@ -54,6 +61,89 @@ body {
 
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* theme toggle button in nav */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: transparent;
+  border: 1px solid var(--fg);
+  border-radius: 20px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.theme-toggle:hover {
+  opacity: 1;
+}
+
+.toggle-label {
+  font-family: var(--type-3);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--fg);
+  min-width: 35px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background-color: rgba(128, 128, 128, 0.5);
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: var(--fg);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:active .toggle-slider {
+  transform: scale(0.9);
+}
+
+/* Dark theme - slider on right */
+html.dark .toggle-slider {
+  transform: translateX(20px);
+}
+
+html.dark .toggle-switch {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 1000px) {
+  .theme-toggle {
+    padding: 0.3rem 0.6rem;
+  }
+
+  .toggle-label {
+    display: none;
+  }
+
+  .toggle-switch {
+    width: 35px;
+    height: 18px;
+  }
+
+  .toggle-slider {
+    width: 14px;
+    height: 14px;
+  }
+
+  html.dark .toggle-slider {
+    transform: translateX(17px);
+  }
 }
 
 /* lenis smooth scroll */

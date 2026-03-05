@@ -10,6 +10,14 @@
     <link rel="icon" type="image/png" href="/site-icon.png" />
 
     <script>
+      // Apply theme immediately before page renders
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    </script>
+
+    <script>
       const path = window.location.pathname.replace(/\/+$/, "") || "/";
       const isHomePath =
         path === "/" || path === "/index" || path === "/index.html";
@@ -26,8 +34,8 @@
       nomodule
       src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"
     ></script>
-    <script type="module" crossorigin src="/assets/index-XHYe3e8h.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BWjxLgeu.css">
+    <script type="module" crossorigin src="/assets/index-ByhU503W.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DeBTWxNw.css">
   </head>
   <body>
     <div id="root"></div>

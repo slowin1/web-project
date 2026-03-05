@@ -1,4 +1,8 @@
+import { useTheme } from "../hooks/ThemeContext";
+
 export default function Nav({ location = "Chisinau, MD" }) {
+  const { isDark, toggleTheme } = useTheme();
+
   return (
     <nav>
       <div className="container">
@@ -40,6 +44,12 @@ export default function Nav({ location = "Chisinau, MD" }) {
           <p className="type-mono">
             <ion-icon name="triangle-sharp" /> {location}
           </p>
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+            <span className="toggle-label">{isDark ? "Dark" : "Light"}</span>
+            <div className="toggle-switch">
+              <div className="toggle-slider"></div>
+            </div>
+          </button>
         </div>
       </div>
 

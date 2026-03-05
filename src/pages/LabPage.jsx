@@ -2,7 +2,7 @@ import Footer from "../components/Footer";
 
 export default function LabPage() {
   return (
-    <>
+    <div className="lab-page">
       <canvas id="particle-canvas"></canvas>
 
     <section className="lab-hero">
@@ -88,11 +88,12 @@ export default function LabPage() {
           <div className="stat-content">
             <div className="stat-title">
               <h3>
-                какой-то текст про услуги, который может быть длинным и занимать несколько строк, чтобы показать, как будет выглядеть в дизайне
+                Классический массаж  это базовая техника, которая помогает расслабиться, улучшить кровообращение
+                и снять мышечное напряжение.
               </h3>
             </div>
             <div className="stat-info">
-              <p className="type-mono">(имя фамилия)</p>
+              <p className="type-mono">(Анастасия Длиноручка)</p>
             </div>
           </div>
         </div>
@@ -103,10 +104,10 @@ export default function LabPage() {
           </div>
           <div className="stat-content">
             <div className="stat-title">
-              <h3>какой-то текст про услуги, который может быть длинным и занимать несколько строк, чтобы показать, как будет выглядеть в дизайне</h3>
+               <h3>Лечебный массаж  при болях в спине, шее, пояснице по показаниям. </h3>
             </div>
             <div className="stat-info">
-              <p className="type-mono">(имя фамилия)</p>
+              <p className="type-mono">(Яна Дрочунова)</p>
             </div>
           </div>
         </div>
@@ -117,10 +118,10 @@ export default function LabPage() {
           </div>
           <div className="stat-content">
             <div className="stat-title">
-              <h3>какой-то текст про услуги, который может быть длинным и занимать несколько строк, чтобы показать, как будет выглядеть в дизайне</h3>
+              <h3>Спортивный массаж  для восстановления после тренировок.</h3>
             </div>
             <div className="stat-info">
-              <p className="type-mono">(имя фамилия)</p>
+              <p className="type-mono">(Анастасия Длиноручка)</p>
             </div>
           </div>
         </div>
@@ -131,10 +132,10 @@ export default function LabPage() {
           </div>
           <div className="stat-content">
             <div className="stat-title">
-              <h3>какой-то текст про услуги, который может быть длинным и занимать несколько строк, чтобы показать, как будет выглядеть в дизайне</h3>
+              <h3>Тайский массаж  растяжки и работа с энергетическими линиями.</h3>
             </div>
             <div className="stat-info">
-              <p className="type-mono">(имя фамилия)</p>
+              <p className="type-mono">(Валентика Кусака)</p>
             </div>
           </div>
         </div>
@@ -180,6 +181,6 @@ export default function LabPage() {
 
 
 
-    </>
+    </div>
   );
 }
