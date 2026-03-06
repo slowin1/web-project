@@ -14,7 +14,6 @@ git clone https://github.com/slowin1/web-project.git
 npm install --save three
 npm install
 npm run dev
-
 ```
 
 
