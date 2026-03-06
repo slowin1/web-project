@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-
+Снизу описаны с какими файлами надо работать для редактирования страницы если че ии в помощь 
 
 # Главная страница
 
@@ -24,4 +24,12 @@ npm run dev
 
 <img width="1675" height="962" alt="image" src="https://github.com/user-attachments/assets/376ab509-b7f8-49f4-acbc-a511411234b5" />
 
-> jklj
+> App.jsx, Layout.jsx, global.css, skyline.js
+
+
+# Навигация по сайту 
+
+<img width="1679" height="961" alt="image" src="https://github.com/user-attachments/assets/8fd6de32-ce9c-4b81-947b-3228d5014619" />
+
+> App.jsx, menu.js, menuShader.js, global.css
+
