@@ -1,7 +1,14 @@
 import Footer from "../components/Footer";
+import { useState } from "react";
+import useDebounce from "../hooks/useDebounce";
 import { workServices } from "../data/workServices";
 
 export default function WorkPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 250);
+  const filteredServices = workServices.filter((s) =>
+    s.name.toLowerCase().includes(debouncedQuery.toLowerCase())
+  );
   return (
     <>
       <section className="work-hero">
@@ -37,7 +44,15 @@ export default function WorkPage() {
 
     <section className="work-items">
       <div className="container">
-        {workServices.map((service, index) => (
+        <div className="work-search">
+          <input
+            type="text"
+            placeholder="Поиск по названию"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        {filteredServices.map((service, index) => (
           <div
             className="work-item-row"
             id={`work-item-row-${index + 1}`}

@@ -31,7 +31,7 @@ export default function Footer() {
         <div className="footer-content">
           <div className="footer-row">
             <div className="footer-col">
-              <h2>Deadspace</h2>
+              <h2>Massage Salon</h2>
             </div>
 
             <div className="footer-col">
@@ -69,7 +69,7 @@ export default function Footer() {
           </div>
 
           <div className="footer-row">
-            <p className="type-mono">MWT 19 Februaty '26</p>
+            <p className="type-mono">MWT 19 February '26</p>
             <p className="type-mono">[ Engineered by clavik ]</p>
           </div>
         </div>
