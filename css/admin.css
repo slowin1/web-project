@@ -167,6 +167,15 @@ html.dark .admin-page {
     text-transform: uppercase;
 }
 
+.loading-text {
+    color: var(--fg);
+    font-family: var(--type-3);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 2rem;
+    opacity: 0.7;
+}
+
 .admin-header {
     display: flex;
     justify-content: space-between;
@@ -619,22 +628,44 @@ html.dark .admin-page {
     font-size: 0.75rem;
 }
 
+.recharts-tooltip-wrapper {
+    position: relative;
+}
+
 .recharts-tooltip-wrapper .recharts-default-tooltip {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)) !important;
     backdrop-filter: blur(20px) !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 12px !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    padding: 10px !important;
 }
 
 .recharts-tooltip-wrapper .recharts-tooltip-label {
-    color: var(--fg);
-    font-family: var(--type-3);
+    color: var(--fg) !important;
+    font-family: var(--type-3) !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
 }
 
 .recharts-tooltip-wrapper .recharts-tooltip-item {
-    color: var(--fg);
-    font-family: var(--type-3);
+    color: var(--fg) !important;
+    font-family: var(--type-3) !important;
+    font-size: 0.75rem !important;
+}
+
+.recharts-legend-wrapper {
+    margin-bottom: 10px !important;
+}
+
+.recharts-legend-item {
+    margin-right: 15px !important;
+}
+
+.recharts-legend-text {
+    color: var(--fg) !important;
+    font-family: var(--type-3) !important;
+    font-size: 0.75rem !important;
 }
 
 /* Responsive */
