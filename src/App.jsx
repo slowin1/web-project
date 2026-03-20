@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ContactPage from "./pages/ContactPage";
 import LabPage from "./pages/LabPage";
+import UnitPage from "./pages/UnitPage";
 import ProjectPage from "./pages/ProjectPage";
 import WorkPage from "./pages/WorkPage";
 import WorkPages from "./pages/WorkPages";
@@ -276,6 +277,19 @@ function App() {
                 title="Lab"
                 modulePaths={LAB_MODULES}
                 component={LabPage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/lab/:id"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Service Details"
+                modulePaths={LAB_MODULES}
+                component={UnitPage}
                 clearOverflow
               />
             </Layout>
