@@ -12,12 +12,14 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Legend
+    Legend,
+    LabelList
 } from 'recharts';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useUsers } from '../hooks/useUsers';
 import { useSettings } from '../hooks/useSettings';
 import { useContent } from '../hooks/useContent';
+import ServicesAdmin from '../components/ServicesAdmin/ServicesAdmin';
 
 export default function AdminPage() {
     const [activeSection, setActiveSection] = useState('dashboard');
@@ -70,13 +72,24 @@ export default function AdminPage() {
     const renderContent = () => {
         switch (activeSection) {
             case 'dashboard':
+                if (dashboardLoading) {
+                    return (
+                        <div className="admin-section">
+                            <div className="admin-header">
+                                <h3>Dashboard</h3>
+                            </div>
+                            <p className="loading-text">Loading dashboard data...</p>
+                        </div>
+                    );
+                }
+
                 return (
                     <div className="admin-section">
                         <div className="admin-header">
                             <h3>Dashboard</h3>
                             <div className="date-range-picker">
-                                <select 
-                                    value={selectedPeriod} 
+                                <select
+                                    value={selectedPeriod}
                                     onChange={(e) => {
                                         setSelectedPeriod(e.target.value);
                                         refreshData(e.target.value);
@@ -136,33 +149,52 @@ export default function AdminPage() {
                             <div className="chart-header">
                                 <h4>Visitor Analytics</h4>
                             </div>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={visitorData}>
-                                    <defs>
-                                        <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#4a9eff" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="#4a9eff" stopOpacity={0}/>
-                                        </linearGradient>
-                                        <linearGradient id="colorUnique" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="#00d4ff" stopOpacity={0}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" />
-                                    <YAxis stroke="rgba(255,255,255,0.6)" />
-                                    <Tooltip 
-                                        contentStyle={{ 
-                                            backgroundColor: 'var(--fg)', 
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                            borderRadius: '4px',
-                                        }} 
-                                    />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="visitors" stroke="#4a9eff" fillOpacity={1} fill="url(#colorVisitors)" />
-                                    <Area type="monotone" dataKey="unique" stroke="#00d4ff" fillOpacity={1} fill="url(#colorUnique)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                            {visitorData && visitorData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <AreaChart data={visitorData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#4a9eff" stopOpacity={0.8}/>
+                                                <stop offset="95%" stopColor="#4a9eff" stopOpacity={0}/>
+                                            </linearGradient>
+                                            <linearGradient id="colorUnique" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.8}/>
+                                                <stop offset="95%" stopColor="#00d4ff" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                        <XAxis 
+                                            dataKey="name" 
+                                            stroke="rgba(255,255,255,0.6)" 
+                                            tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                                        />
+                                        <YAxis 
+                                            stroke="rgba(255,255,255,0.6)"
+                                            tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
+                                        />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Area 
+                                            type="monotone" 
+                                            dataKey="visitors" 
+                                            stroke="#4a9eff" 
+                                            fillOpacity={1} 
+                                            fill="url(#colorVisitors)" 
+                                            name="Visitors"
+                                        />
+                                        <Area 
+                                            type="monotone" 
+                                            dataKey="unique" 
+                                            stroke="#00d4ff" 
+                                            fillOpacity={1} 
+                                            fill="url(#colorUnique)"
+                                            name="Unique" 
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <p className="loading-text">No visitor data available</p>
+                            )}
                         </div>
 
                         {/* Secondary Charts Row */}
@@ -171,54 +203,61 @@ export default function AdminPage() {
                                 <div className="chart-header">
                                     <h4>Hourly Traffic</h4>
                                 </div>
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <BarChart data={hourlyData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                        <XAxis dataKey="time" stroke="rgba(255,255,255,0.6)" />
-                                        <YAxis stroke="rgba(255,255,255,0.6)" />
-                                        <Tooltip 
-                                            contentStyle={{ 
-                                                backgroundColor: 'var(--fg)', 
-                                                border: '1px solid rgba(255,255,255,0.2)',
-                                                borderRadius: '4px',
-                                            }} 
-                                        />
-                                        <Bar dataKey="visitors" fill="#7b61ff" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                                {hourlyData && hourlyData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height={250}>
+                                        <BarChart data={hourlyData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                            <XAxis dataKey="time" stroke="rgba(255,255,255,0.6)" />
+                                            <YAxis stroke="rgba(255,255,255,0.6)" />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    backgroundColor: 'var(--fg)',
+                                                    border: '1px solid rgba(255,255,255,0.2)',
+                                                    borderRadius: '4px',
+                                                }}
+                                            />
+                                            <Bar dataKey="visitors" fill="#7b61ff" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <p className="loading-text">No hourly data available</p>
+                                )}
                             </div>
 
                             <div className="chart-container half">
                                 <div className="chart-header">
                                     <h4>Device Distribution</h4>
                                 </div>
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <PieChart>
-                                        <Pie
-                                            data={deviceData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            fill="#8884d8"
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                            label={({ name, value }) => `${name}: ${value}%`}
-                                            labelLine={false}
-                                        >
-                                            {deviceData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            contentStyle={{ 
-                                                backgroundColor: 'var(--fg)', 
-                                                border: '1px solid rgba(255,255,255,0.2)',
-                                                borderRadius: '4px',
-                                            }} 
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                {deviceData && deviceData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height={250}>
+                                        <PieChart>
+                                            <Pie
+                                                data={deviceData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                                label={({ name, value }) => `${name}: ${value}%`}
+                                                labelLine={false}
+                                            >
+                                                {deviceData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip
+                                                contentStyle={{
+                                                    backgroundColor: 'var(--fg)',
+                                                    border: '1px solid rgba(255,255,255,0.2)',
+                                                    borderRadius: '4px',
+                                                }}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <p className="loading-text">No device data available</p>
+                                )}
                             </div>
                         </div>
 
@@ -410,6 +449,9 @@ export default function AdminPage() {
                     </div>
                 );
 
+            case 'services':
+                return <ServicesAdmin />;
+
             default:
                 return null;
         }
@@ -457,6 +499,16 @@ export default function AdminPage() {
                                     >
                                         <span className="menu-icon">📁</span>
                                         Content
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="#services-management"
+                                        className={activeSection === 'services' ? 'active' : ''}
+                                        onClick={(e) => { e.preventDefault(); setActiveSection('services'); }}
+                                    >
+                                        <span className="menu-icon">💆</span>
+                                        Services
                                     </a>
                                 </li>
                                 <li>

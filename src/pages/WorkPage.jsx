@@ -1,6 +1,14 @@
 import Footer from "../components/Footer";
+import { useState } from "react";
+import useDebounce from "../hooks/useDebounce";
+import { workServices } from "../data/workServices";
 
 export default function WorkPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 250);
+  const filteredServices = workServices.filter((s) =>
+    s.name.toLowerCase().includes(debouncedQuery.toLowerCase())
+  );
   return (
     <>
       <section className="work-hero">
@@ -36,65 +44,31 @@ export default function WorkPage() {
 
     <section className="work-items">
       <div className="container">
-        <div className="work-item-row" id="work-item-row-1">
-          <a href="/project">
-            <div className="work-item">
-              <img src="/work/work_01.jpg" alt="" />
-              <div className="work-item-info">
-                <p>Тайский массаж</p>
-                <p>9K4F2M7Q</p>
-              </div>
-            </div>
-          </a>
+        <div className="work-search">
+          <input
+            type="text"
+            placeholder="Поиск по названию"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-
-        <div className="work-item-row" id="work-item-row-2">
-          <a href="/project">
-            <div className="work-item">
-              <img src="/work/work_02.jpg" alt="" />
-              <div className="work-item-info">
-                <p>Шведский массаж</p>
-                <p>A7L3Q9F2</p>
+        {filteredServices.map((service, index) => (
+          <div
+            className="work-item-row"
+            id={`work-item-row-${index + 1}`}
+            key={service.slug}
+          >
+            <a href={`/work/${service.slug}`}>
+              <div className="work-item">
+                <img src={service.image} alt={service.name} />
+                <div className="work-item-info">
+                  <p>{service.name}</p>
+                  <p>{service.code}</p>
+                </div>
               </div>
-            </div>
-          </a>
-        </div>
-
-        <div className="work-item-row" id="work-item-row-3">
-          <a href="/project">
-            <div className="work-item">
-              <img src="/work/work_03.jpg" alt="" />
-              <div className="work-item-info">
-                <p>Массаж с использованием масла</p>
-                <p>R1M9D4K7</p>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <div className="work-item-row" id="work-item-row-4">
-          <a href="/project">
-            <div className="work-item">
-              <img src="/work/work_04.jpg" alt="" />
-              <div className="work-item-info">
-                <p>Банный чан</p>
-                <p>2F8Q7A9L</p>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <div className="work-item-row" id="work-item-row-5">
-          <a href="/project">
-            <div className="work-item">
-              <img src="/work/work_05.jpg" alt="" />
-              <div className="work-item-info">
-                <p>Сауна</p>
-                <p>M4D9K7F2</p>
-              </div>
-            </div>
-          </a>
-        </div>
+            </a>
+          </div>
+        ))}
       </div>
     </section>
 

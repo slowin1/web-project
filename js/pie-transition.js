@@ -15,6 +15,14 @@ const STATE = {
 
 let scaleMultiplier = window.innerWidth < 1000 ? 3 : 2.5;
 
+// theme colors
+const THEME_COLORS = {
+  light: "#141414",
+  dark: "#ffffff",
+};
+
+let currentTheme = "light";
+
 // initialization
 document.addEventListener("DOMContentLoaded", init);
 
@@ -27,6 +35,7 @@ function init() {
   createPie();
   setupHeader();
   setupScrollTrigger();
+  setupThemeListener();
 
   window.addEventListener("resize", handleResize);
 }
@@ -55,6 +64,10 @@ function createDots() {
   dotsGroup.setAttribute("id", "pie-transition-dots-group");
   STATE.dotsGroup = dotsGroup;
 
+  const isDark = document.documentElement.classList.contains("dark");
+  currentTheme = isDark ? "dark" : "light";
+  const dotColor = THEME_COLORS[currentTheme];
+
   for (let i = 0; i < 1500; i++) {
     const angle = Math.random() * Math.PI * 2;
     const distance = Math.sqrt(Math.random()) * 300;
@@ -68,7 +81,7 @@ function createDots() {
     dot.setAttribute("cx", x);
     dot.setAttribute("cy", y);
     dot.setAttribute("r", "1");
-    dot.setAttribute("fill", "#C8CFC8");
+    dot.setAttribute("fill", dotColor);
     dotsGroup.appendChild(dot);
   }
 
@@ -81,6 +94,9 @@ function createPie() {
   pieGroup.style.transformOrigin = "400px 400px";
   pieGroup.setAttribute("id", "pie-transition-pie-group");
   STATE.pieGroup = pieGroup;
+
+  const isDark = document.documentElement.classList.contains("dark");
+  const pieColor = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
 
   const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
   const mask = document.createElementNS("http://www.w3.org/2000/svg", "mask");
@@ -112,7 +128,7 @@ function createPie() {
   solidCircle.setAttribute("cx", "400");
   solidCircle.setAttribute("cy", "400");
   solidCircle.setAttribute("r", "302");
-  solidCircle.setAttribute("fill", "#c8cfc8");
+  solidCircle.setAttribute("fill", pieColor);
   solidCircle.setAttribute("mask", "url(#pie-transition-mask)");
 
   pieGroup.appendChild(solidCircle);
@@ -231,4 +247,42 @@ function updatePieFill(progress) {
 function handleResize() {
   scaleMultiplier = window.innerWidth < 1000 ? 3 : 2.5;
   ScrollTrigger.refresh();
+}
+
+// theme change listener
+function setupThemeListener() {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "attributes" && mutation.attributeName === "class") {
+        const isDark = document.documentElement.classList.contains("dark");
+        const newTheme = isDark ? "dark" : "light";
+
+        if (newTheme !== currentTheme) {
+          currentTheme = newTheme;
+          updateColors(isDark);
+        }
+      }
+    });
+  });
+
+  observer.observe(document.documentElement, { attributes: true });
+}
+
+// update colors on theme change
+function updateColors(isDark) {
+  const newColor = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
+
+  // update dots
+  if (STATE.dotsGroup) {
+    const dots = STATE.dotsGroup.querySelectorAll("circle");
+    dots.forEach(dot => {
+      dot.setAttribute("fill", newColor);
+    });
+  }
+
+  // update pie
+  const solidCircle = STATE.svg?.querySelector("circle[mask]");
+  if (solidCircle) {
+    solidCircle.setAttribute("fill", newColor);
+  }
 }

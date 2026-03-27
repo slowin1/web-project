@@ -2,8 +2,10 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ContactPage from "./pages/ContactPage";
 import LabPage from "./pages/LabPage";
+import UnitPage from "./pages/UnitPage";
 import ProjectPage from "./pages/ProjectPage";
 import WorkPage from "./pages/WorkPage";
+import WorkPages from "./pages/WorkPages";
 import Layout from "./components/Layout";
 import LogIn from "./pages/LogIn";
 import ProfilePage from "./pages/Profile";
@@ -165,17 +167,7 @@ function HomePage() {
         });
     }
 
-    const root = document.documentElement;
-    const previousBg = getComputedStyle(root).getPropertyValue("--bg").trim();
-    root.style.setProperty("--bg", "#C8CFC8");
-
-    return () => {
-      if (previousBg) {
-        root.style.setProperty("--bg", previousBg);
-      } else {
-        root.style.removeProperty("--bg");
-      }
-    };
+    // Theme colors are handled by CSS variables
   }, []);
 
   return (
@@ -291,6 +283,19 @@ function App() {
           }
         />
         <Route
+          path="/lab/:id"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Service Details"
+                modulePaths={LAB_MODULES}
+                component={UnitPage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
           path="/work"
           element={
             <Layout>
@@ -311,6 +316,19 @@ function App() {
                 title="Project"
                 modulePaths={PROJECT_MODULES}
                 component={ProjectPage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/work/:slug"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Service"
+                modulePaths={PROJECT_MODULES}
+                component={WorkPages}
                 clearOverflow
               />
             </Layout>

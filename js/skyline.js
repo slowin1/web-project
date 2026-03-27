@@ -5,6 +5,21 @@ const canvas = document.getElementById("skyline");
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const pixelRatioLimit = isMobile ? 1.0 : 1.25;
 
+// theme colors
+const THEME_COLORS = {
+  light: { bg: new THREE.Vector3(0.7843, 0.8118, 0.7843), fog: 0.15, baseFog: 0.075 },
+  dark: { bg: new THREE.Vector3(0.1137, 0.1608, 0.2392), fog: 0.08, baseFog: 0.04 },
+};
+
+let currentTheme = "light";
+let themeObserver = null;
+
+// Get initial theme from localStorage
+function getInitialTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  return savedTheme === "dark" ? "dark" : "light";
+}
+
 // Only initialize if canvas exists
 if (canvas) {
   const renderer = new THREE.WebGLRenderer({
@@ -19,10 +34,18 @@ if (canvas) {
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
   const geometry = new THREE.PlaneGeometry(2, 2);
+
+  // Get initial theme
+  currentTheme = getInitialTheme();
+  const colors = THEME_COLORS[currentTheme];
+
   const material = new THREE.ShaderMaterial({
     uniforms: {
       iTime: { value: 0 },
       iResolution: { value: new THREE.Vector3() },
+      uBgColor: { value: colors.bg },
+      uFog: { value: colors.fog },
+      uBaseFog: { value: colors.baseFog },
     },
     vertexShader: `
     varying vec2 vUv;
@@ -40,6 +63,9 @@ if (canvas) {
 
     uniform float iTime;
     uniform vec3 iResolution;
+    uniform vec3 uBgColor;
+    uniform float uFog;
+    uniform float uBaseFog;
     varying vec2 vUv;
 
     uint seed = 31713U;
@@ -91,26 +117,23 @@ if (canvas) {
       vec3 color = vec3(1);
 
       const float size = .5;
-      const float fog = .15;
-      const float baseFog = 0.075;
 
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*0.)+iTime*vec2(4,0),0), exp2(-fog*0.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*1.)+iTime*vec2(4,0),1), exp2(-fog*1.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*2.)+iTime*vec2(4,0),2), exp2(-fog*2.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*3.)+iTime*vec2(4,0),3), exp2(-fog*3.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*4.)+iTime*vec2(4,0),4), exp2(-fog*4.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*5.)+iTime*vec2(4,0),5), exp2(-fog*5.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*6.)+iTime*vec2(4,0),6), exp2(-fog*6.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*7.)+iTime*vec2(4,0),7), exp2(-fog*7.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*8.)+iTime*vec2(4,0),8), exp2(-fog*8.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*9.)+iTime*vec2(4,0),9), exp2(-fog*9.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*10.)+iTime*vec2(4,0),10), exp2(-fog*10.-baseFog)));
-      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*11.)+iTime*vec2(4,0),11), exp2(-fog*11.-baseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*0.)+iTime*vec2(4,0),0), exp2(-uFog*0.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*1.)+iTime*vec2(4,0),1), exp2(-uFog*1.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*2.)+iTime*vec2(4,0),2), exp2(-uFog*2.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*3.)+iTime*vec2(4,0),3), exp2(-uFog*3.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*4.)+iTime*vec2(4,0),4), exp2(-uFog*4.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*5.)+iTime*vec2(4,0),5), exp2(-uFog*5.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*6.)+iTime*vec2(4,0),6), exp2(-uFog*6.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*7.)+iTime*vec2(4,0),7), exp2(-uFog*7.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*8.)+iTime*vec2(4,0),8), exp2(-uFog*8.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*9.)+iTime*vec2(4,0),9), exp2(-uFog*9.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*10.)+iTime*vec2(4,0),10), exp2(-uFog*10.-uBaseFog)));
+      color = min(color, mix(vec3(1), Buildings(uv*exp2(size*11.)+iTime*vec2(4,0),11), exp2(-uFog*11.-uBaseFog)));
 
       color = pow(color, vec3(1./2.2));
 
-      const vec3 bgColor = vec3(0.7843, 0.8118, 0.7843);
-      color = mix(bgColor, vec3(0.0), 1.0 - color.r);
+      color = mix(uBgColor, vec3(0.0), 1.0 - color.r);
 
       gl_FragColor = vec4(color, 1.0);
     }
@@ -150,11 +173,45 @@ if (canvas) {
     renderer.dispose();
     window.removeEventListener("resize", handleResize);
     window.removeEventListener("beforeunload", cleanup);
+    if (themeObserver) themeObserver.disconnect();
+  }
+
+  // theme change listener
+  function setupThemeListener() {
+    themeObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "attributes" && mutation.attributeName === "class") {
+          const isDark = document.documentElement.classList.contains("dark");
+          const newTheme = isDark ? "dark" : "light";
+
+          if (newTheme !== currentTheme) {
+            currentTheme = newTheme;
+            const colors = THEME_COLORS[currentTheme];
+            material.uniforms.uBgColor.value.copy(colors.bg);
+            material.uniforms.uFog.value = colors.fog;
+            material.uniforms.uBaseFog.value = colors.baseFog;
+          }
+        }
+      });
+    });
+
+    themeObserver.observe(document.documentElement, { attributes: true });
   }
 
   // initialize
   handleResize();
   window.addEventListener("resize", handleResize);
   window.addEventListener("beforeunload", cleanup);
+  setupThemeListener();
+
+  // Apply current theme colors after initialization
+  const initialTheme = getInitialTheme();
+  if (initialTheme === "dark") {
+    const colors = THEME_COLORS.dark;
+    material.uniforms.uBgColor.value.copy(colors.bg);
+    material.uniforms.uFog.value = colors.fog;
+    material.uniforms.uBaseFog.value = colors.baseFog;
+  }
+
   requestAnimationFrame(animate);
 }
