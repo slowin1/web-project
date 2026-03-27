@@ -1,0 +1,247 @@
+.services-header {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding-top: 25svh;
+  overflow: hidden;
+}
+
+.services-header .container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.services-header h1 {
+  width: 50%;
+}
+
+.services-header .services-header-divider {
+  width: 100%;
+  height: 0.125rem;
+  background-color: var(--base-200);
+}
+
+.services-header .service-filter-bar {
+  width: 100%;
+  display: flex;
+  gap: 1rem;
+}
+
+.services-header .service-filter-bar p {
+  font-weight: 500;
+}
+
+.services-header .service-filter-bar > div {
+  flex: 1;
+  display: flex;
+}
+
+.services-header .filter-bar-tags {
+  justify-content: center;
+  gap: 1rem;
+}
+
+.services-header .filter-bar-tags p {
+  color: var(--base-400);
+  cursor: pointer;
+}
+
+.services-header .filter-bar-tags p.active {
+  color: var(--base-700);
+}
+
+.services-header .filter-bar-colors {
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.services-header .filter-bar-colors span {
+  width: 1rem;
+  height: 1rem;
+  border: 0.0625rem solid var(--base-200);
+  cursor: pointer;
+}
+
+.services-header .filter-bar-colors span.relax {
+  background-color: #a8d5ba;
+}
+
+.services-header .filter-bar-colors span.therapeutic {
+  background-color: #9db4d7;
+}
+
+.services-header .filter-bar-colors span.sport {
+  background-color: #d79d9d;
+}
+
+.services-header .filter-bar-colors span.thai {
+  background-color: #d7c49d;
+}
+
+.services-header .filter-bar-colors span.body {
+  background-color: #c99dd7;
+}
+
+.services-header .filter-bar-colors span.face {
+  background-color: #d79db5;
+}
+
+.services-header .filter-bar-colors span.all {
+  background: linear-gradient(135deg, #a8d5ba 25%, #9db4d7 25%, #9db4d7 50%, #d79d9d 50%, #d79d9d 75%, #d7c49d 75%);
+}
+
+.services-header .filter-bar-colors span.active {
+  border: 0.125rem dashed var(--base-700);
+}
+
+.services-list {
+  width: 100%;
+  padding: 2rem 0 4rem 0;
+}
+
+.services-list .container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.product-card {
+  position: relative;
+  background-color: var(--card-bg);
+  border: 1px solid var(--base-200);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  border-color: var(--base-400);
+  transform: translateY(-4px);
+}
+
+.product-card-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: var(--card-text);
+
+}
+
+.product-image {
+  width: 100%;
+  height: 550px;
+  overflow: hidden;
+  background-color: var(--base-200);
+  flex-shrink: 0;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.05);
+}
+
+.product-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.product-name {
+  font-size: 1.25rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-family: var(--type-1);
+  line-height: 1.1;
+}
+
+.product-price {
+  font-family: var(--type-3);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.product-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.product-specialist,
+.product-duration {
+  font-family: var(--type-2);
+  font-size: 0.875rem;
+  color: var(--base-500);
+}
+
+.copy-container {
+  display: block;
+}
+
+.copy-container .word {
+  display: inline-block;
+  opacity: 0;
+}
+
+@media (max-width: 1024px) {
+  .services-list .container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+  .services-header .container {
+    align-items: center;
+    text-align: center;
+  }
+
+  .services-header h1 {
+    width: 100%;
+  }
+
+  .services-list .container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .services-header .service-filter-bar {
+    flex-direction: column;
+  }
+
+  .services-header .filter-bar-header {
+    display: none !important;
+  }
+
+  .services-header .filter-bar-tags,
+  .services-header .filter-bar-colors {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 500px) {
+  .services-list .container {
+    grid-template-columns: 1fr;
+  }
+
+  .product-image {
+    height: 450px;
+  }
+}

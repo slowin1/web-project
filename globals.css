@@ -29,18 +29,23 @@
 
 
 :root {
-  --bg: #C8CFC8;
-  --fg: #313131;
-  --bg_lab: #233e5b;
+  --bg: #c2c2c2;
+  --fg: #000000;
+  --bg_lab: #c2c2c2;
   --type-1: "De Fonte Plus", sans-serif;
   --type-2: "Russian", sans-serif;
   --type-3: "DM Mono", monospace;
+  --card-bg: rgb(214, 215, 218);
+  --card-text: #000;
 }
 
 html.dark {
-  --bg: #0a0a0a;
-  --fg: #c2c2c2;
-  --bg_lab: #3E3B37;
+  --bg: #0a0a0af1;
+  --fg: #b3b3b3;
+  --bg_profile: #1e1e1ebd;
+  --bg_lab: #0b0b11;
+  --card-bg: #000000;
+  --card-text: #fff;
 }
 
 * {
