@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import useDebounce from "../hooks/useDebounce";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
@@ -11,8 +10,6 @@ export default function LabPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("all");
   const [filteredServices, setFilteredServices] = useState(massageServices);
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedQuery = useDebounce(searchQuery, 250);
   const [isAnimating, setIsAnimating] = useState(false);
   const productRefs = useRef([]);
   const isInitialMount = useRef(true);
@@ -34,43 +31,14 @@ export default function LabPage() {
       ease: "power3.out",
       onComplete: () => {
         const filtered = massageServices.filter((service) => {
-          const matchesCategory = newCategory === "all" ? true : service.category === newCategory;
-          const matchesQuery = !searchQuery ? true : service.name.toLowerCase().includes(searchQuery.toLowerCase());
-          return matchesCategory && matchesQuery;
+          if (newCategory === "all") return true;
+          return service.category === newCategory;
         });
 
         setFilteredServices(filtered);
       },
     });
   };
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  useEffect(() => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    gsap.killTweensOf(productRefs.current);
-
-    gsap.to(productRefs.current, {
-      opacity: 0,
-      scale: 0.5,
-      duration: 0.18,
-      stagger: 0.03,
-      ease: "power3.out",
-      onComplete: () => {
-        const filtered = massageServices.filter((service) => {
-          const matchesCategory = activeCategory === "all" ? true : service.category === activeCategory;
-          const matchesQuery = !debouncedQuery ? true : service.name.toLowerCase().includes(debouncedQuery.toLowerCase());
-          return matchesCategory && matchesQuery;
-        });
-
-        setFilteredServices(filtered);
-      },
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, activeCategory]);
 
   useEffect(() => {
     productRefs.current = productRefs.current.slice(0, filteredServices.length);
@@ -164,14 +132,6 @@ export default function LabPage() {
           <div className="service-filter-bar">
             <div className="filter-bar-header">
               <p className="bodyCopy">Filters</p>
-            </div>
-            <div className="filter-bar-search">
-              <input
-                type="text"
-                placeholder="Поиск по названию"
-                value={searchQuery}
-                onChange={handleSearchChange}
-              />
             </div>
             <div className="filter-bar-tags">
               {categories.map((category) => (
