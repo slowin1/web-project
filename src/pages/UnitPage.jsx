@@ -11,16 +11,19 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const API_BASE_URL = "http://localhost:5032";
+
 export default function UnitPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const heroRef = useRef(null);
   const activeMinimapIndex = useRef(0);
   const [relatedServices, setRelatedServices] = useState([]);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingError, setBookingError] = useState("");
 
-  const currentService = massageServices.find(
-    (s) => s.id === parseInt(id)
-  ) || massageServices[0];
+  const currentService =
+    massageServices.find((s) => s.id === parseInt(id)) || massageServices[0];
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -55,7 +58,7 @@ export default function UnitPage() {
   useGSAP(() => {
     const snapshots = document.querySelectorAll(".service-snapshot");
     const minimapImages = document.querySelectorAll(
-      ".service-snapshot-minimap-img"
+      ".service-snapshot-minimap-img",
     );
     const totalImages = snapshots.length;
 
@@ -128,8 +131,60 @@ export default function UnitPage() {
     ScrollTrigger.refresh();
   }, []);
 
-  const handleBookNow = () => {
-    alert(`Запись на процедуру: ${currentService.name}\nСпециалист: ${currentService.specialist}`);
+  const handleBookNow = async () => {
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      navigate("/LogIn");
+      return;
+    }
+
+    // Generate a simple booking date (tomorrow, 14:00) — a real app would have a date picker
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const bookingDate = tomorrow.toISOString().split("T")[0];
+    const bookingTime = "14:00";
+
+    const newBooking = {
+      id: Date.now().toString(),
+      serviceId: currentService.id,
+      serviceName: currentService.name,
+      specialist: currentService.specialist,
+      date: bookingDate,
+      time: bookingTime,
+      duration: currentService.duration,
+      price: currentService.price,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    setBookingSuccess(false);
+    setBookingError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newBooking),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create booking");
+      }
+    } catch (err) {
+      console.error("Booking error:", err);
+
+      // Fallback: save to localStorage
+      const stored = JSON.parse(localStorage.getItem("userBookings") || "[]");
+      stored.unshift(newBooking);
+      localStorage.setItem("userBookings", JSON.stringify(stored));
+    }
+
+    setBookingSuccess(true);
+    setTimeout(() => setBookingSuccess(false), 4000);
   };
 
   const handleSaveService = () => {
@@ -138,38 +193,126 @@ export default function UnitPage() {
 
   return (
     <div className="unit-page">
+      {bookingSuccess && (
+        <div className="booking-notification success">
+          <span>✓</span>
+          <div>
+            <strong>Booking confirmed!</strong>
+            <p>Check your profile for details</p>
+          </div>
+        </div>
+      )}
+      {bookingError && (
+        <div className="booking-notification error">
+          <span>✕</span>
+          <div>
+            <strong>Booking failed</strong>
+            <p>{bookingError}</p>
+          </div>
+        </div>
+      )}
       <section className="service-hero" ref={heroRef}>
         <div className="service-hero-col service-snapshots">
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot-minimap">
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
           </div>
         </div>

@@ -1,0 +1,881 @@
+@keyframes gradient-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* ===== Main Page ===== */
+.profile-page {
+    min-height: 100vh;
+    padding: 8rem 2rem 4rem;
+    background: linear-gradient(-45deg, #e8e8e8, #7a7f8a, #2a3441, #03034a);
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+}
+
+html.dark .profile-page {
+    background: linear-gradient(-45deg, #0a0a0a, #1a1a2e, #16213e, #0a0a0a);
+    background-size: 400% 400%;
+}
+
+.profile-container {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fade-in-up 0.6s ease-out;
+}
+
+.profile-container > h1 {
+    text-align: center;
+    margin-bottom: 3rem;
+    font-size: 4rem;
+    letter-spacing: -0.2rem;
+    font-family: var(--type-1);
+    text-transform: uppercase;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+html.dark .profile-container > h1 {
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
+}
+
+/* ===== Messages ===== */
+.error-message,
+.success-message {
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    font-family: var(--type-3);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    animation: fade-in-up 0.4s ease-out;
+    backdrop-filter: blur(10px);
+}
+
+.error-message {
+    background: linear-gradient(
+        135deg,
+        rgba(244, 67, 54, 0.15),
+        rgba(244, 67, 54, 0.05)
+    );
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #f44336;
+    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.15);
+}
+
+.success-message {
+    background: linear-gradient(
+        135deg,
+        rgba(76, 175, 80, 0.15),
+        rgba(76, 175, 80, 0.05)
+    );
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #4caf50;
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.15);
+}
+
+/* ===== Profile Sections ===== */
+.profile-section {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.03)
+    );
+    backdrop-filter: blur(25px);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.08),
+        transparent
+    );
+    transition: left 0.6s ease;
+}
+
+.profile-section:hover::before {
+    left: 100%;
+}
+
+.profile-section:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: translateY(-3px);
+}
+
+.profile-section h2 {
+    margin: 0 0 2rem 0;
+    font-size: 1.75rem;
+    font-family: var(--type-1);
+    text-transform: uppercase;
+    letter-spacing: -0.08rem;
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.profile-section h2::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.6), transparent);
+    border-radius: 2px;
+}
+
+/* ===== Profile Info Display ===== */
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0.02)
+    );
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.03)
+    );
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.info-label {
+    font-family: var(--type-3);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+    letter-spacing: 0.05rem;
+}
+
+.info-value {
+    font-family: var(--type-2);
+    font-size: 1.15rem;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.04)
+    );
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    min-width: 200px;
+    text-align: right;
+}
+
+/* ===== Forms ===== */
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.form-group label {
+    font-family: var(--type-3);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    opacity: 0.8;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0.02)
+    );
+    backdrop-filter: blur(10px);
+    color: var(--fg);
+    font-size: 1rem;
+    font-family: var(--type-2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-group input::placeholder {
+    color: var(--fg);
+    opacity: 0.4;
+}
+
+.form-group input:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.08),
+        rgba(255, 255, 255, 0.03)
+    );
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.5);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.04)
+    );
+    box-shadow:
+        0 0 30px rgba(255, 255, 255, 0.1),
+        inset 0 0 20px rgba(255, 255, 255, 0.05);
+    transform: scale(1.01);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* ===== Buttons ===== */
+.btn-edit,
+.btn-secondary,
+.btn-logout,
+.btn-delete,
+.btn-link {
+    padding: 0.875rem 1.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-family: var(--type-3);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Edit / Change Password buttons */
+.btn-edit {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.15),
+        rgba(255, 255, 255, 0.05)
+    );
+    color: var(--fg);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.08);
+    margin-top: 1.5rem;
+    width: 100%;
+}
+
+.btn-edit:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.25),
+        rgba(255, 255, 255, 0.1)
+    );
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 6px 25px rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+/* Cancel button */
+.btn-secondary {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.08),
+        rgba(255, 255, 255, 0.02)
+    );
+    color: var(--fg);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    flex: 1;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.15),
+        rgba(255, 255, 255, 0.05)
+    );
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Submit buttons inside forms */
+.profile-form button[type="submit"] {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.08)
+    );
+    color: var(--fg);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-family: var(--type-3);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+    flex: 1;
+}
+
+.profile-form button[type="submit"]:hover:not(:disabled) {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.3),
+        rgba(255, 255, 255, 0.12)
+    );
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
+}
+
+.profile-form button[type="submit"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Logout button */
+.btn-logout {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 152, 0, 0.2),
+        rgba(255, 152, 0, 0.08)
+    );
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.1);
+    flex: 1;
+}
+
+.btn-logout:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 152, 0, 0.3),
+        rgba(255, 152, 0, 0.15)
+    );
+    border-color: rgba(255, 152, 0, 0.5);
+    box-shadow: 0 6px 25px rgba(255, 152, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Delete account button */
+.btn-delete {
+    background: linear-gradient(
+        135deg,
+        rgba(244, 67, 54, 0.2),
+        rgba(244, 67, 54, 0.08)
+    );
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.1);
+    flex: 1;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background: linear-gradient(
+        135deg,
+        rgba(244, 67, 54, 0.3),
+        rgba(244, 67, 54, 0.15)
+    );
+    border-color: rgba(244, 67, 54, 0.5);
+    box-shadow: 0 6px 25px rgba(244, 67, 54, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== Account Actions Section ===== */
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    flex-direction: row;
+}
+
+.profile-actions .btn-logout,
+.profile-actions .btn-delete {
+    flex: 1;
+}
+
+/* ===== Loading State ===== */
+.profile-page .profile-container > p {
+    text-align: center;
+    font-family: var(--type-3);
+    font-size: 1rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+    padding: 4rem 2rem;
+}
+
+/* ===== Bookings Section ===== */
+.bookings-section {
+    animation: fade-in-up 0.6s ease-out 0.2s both;
+}
+
+.bookings-loading {
+    text-align: center;
+    font-family: var(--type-3);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    opacity: 0.6;
+    padding: 2rem;
+}
+
+/* No bookings */
+.no-bookings {
+    text-align: center;
+    padding: 2.5rem 2rem;
+}
+
+.no-bookings-icon {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 1.25rem;
+    filter: grayscale(100%);
+    animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.no-bookings p {
+    font-family: var(--type-3);
+    font-size: 1rem;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 1.5rem;
+}
+
+.btn-book {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.18),
+        rgba(255, 255, 255, 0.06)
+    );
+    color: var(--fg);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-family: var(--type-3);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.08);
+}
+
+.btn-book:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.28),
+        rgba(255, 255, 255, 0.12)
+    );
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 6px 25px rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Bookings list */
+.bookings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.booking-card {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.08),
+        rgba(255, 255, 255, 0.02)
+    );
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 1.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.booking-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+}
+
+.booking-card.confirmed::before {
+    background: linear-gradient(180deg, #4caf50, #66bb6a);
+}
+
+.booking-card.pending::before {
+    background: linear-gradient(180deg, #ff9800, #ffa726);
+}
+
+.booking-card.cancelled::before {
+    background: linear-gradient(180deg, #f44336, #ef5350);
+}
+
+.booking-card.completed::before {
+    background: linear-gradient(180deg, #2196f3, #42a5f5);
+}
+
+.booking-card:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.booking-card-glow {
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.05) 0%,
+        transparent 70%
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.booking-card:hover .booking-card-glow {
+    opacity: 1;
+}
+
+/* Booking header */
+.booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.booking-service-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.booking-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.booking-service-name {
+    font-size: 1.1rem;
+    font-family: var(--type-1);
+    text-transform: uppercase;
+    margin: 0 0 0.3rem 0;
+    letter-spacing: -0.03rem;
+}
+
+.booking-specialist {
+    font-family: var(--type-3);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0;
+}
+
+/* Status badges */
+.booking-status {
+    padding: 0.4rem 0.875rem;
+    border-radius: 20px;
+    font-family: var(--type-3);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08rem;
+    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+}
+
+.booking-status.confirmed {
+    background: linear-gradient(
+        135deg,
+        rgba(76, 175, 80, 0.2),
+        rgba(76, 175, 80, 0.08)
+    );
+    color: #4caf50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.booking-status.pending {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 152, 0, 0.2),
+        rgba(255, 152, 0, 0.08)
+    );
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.booking-status.cancelled {
+    background: linear-gradient(
+        135deg,
+        rgba(244, 67, 54, 0.2),
+        rgba(244, 67, 54, 0.08)
+    );
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    opacity: 0.7;
+}
+
+.booking-status.completed {
+    background: linear-gradient(
+        135deg,
+        rgba(33, 150, 243, 0.2),
+        rgba(33, 150, 243, 0.08)
+    );
+    color: #2196f3;
+    border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+/* Booking details grid */
+.booking-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.04),
+        rgba(255, 255, 255, 0.01)
+    );
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.booking-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.detail-label {
+    font-family: var(--type-3);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    opacity: 0.5;
+}
+
+.detail-value {
+    font-family: var(--type-2);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.price-value {
+    color: #4caf50;
+    font-weight: 700;
+}
+
+/* Cancel booking button */
+.btn-cancel-booking {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-family: var(--type-3);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    background: linear-gradient(
+        135deg,
+        rgba(244, 67, 54, 0.15),
+        rgba(244, 67, 54, 0.05)
+    );
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.25);
+    box-shadow: 0 2px 10px rgba(244, 67, 54, 0.08);
+}
+
+.btn-cancel-booking:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(244, 67, 54, 0.25),
+        rgba(244, 67, 54, 0.1)
+    );
+    border-color: rgba(244, 67, 54, 0.4);
+    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.15);
+    transform: translateY(-1px);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .profile-page {
+        padding: 6rem 1.5rem 3rem;
+    }
+
+    .profile-container > h1 {
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .profile-section {
+        padding: 1.75rem 1.5rem;
+    }
+
+    .profile-section h2 {
+        font-size: 1.35rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .info-value {
+        width: 100%;
+        text-align: left;
+        min-width: auto;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .profile-actions {
+        flex-direction: column;
+    }
+
+    .booking-details {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .booking-status {
+        align-self: flex-start;
+    }
+
+    .booking-service-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .btn-edit,
+    .btn-secondary,
+    .btn-logout,
+    .btn-delete,
+    .profile-form button[type="submit"] {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-page {
+        padding: 5rem 1rem 2rem;
+    }
+
+    .profile-container > h1 {
+        font-size: 2rem;
+    }
+
+    .profile-section {
+        padding: 1.5rem 1.25rem;
+        border-radius: 16px;
+    }
+}
