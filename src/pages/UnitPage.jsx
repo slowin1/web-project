@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
 import Product from "../components/Product/Product";
@@ -182,7 +182,14 @@ export default function UnitPage() {
             <div className="service-meta-header-divider"></div>
             <div className="service-specialist-container">
               <p className="md">Specialist</p>
-              <p className="bodyCopy">{currentService.specialist}</p>
+              <p className="bodyCopy">
+                <Link
+                  to={`/lab/specialists?specialist=${currentService.specialistSlug}`}
+                  className="service-specialist-link"
+                >
+                  {currentService.specialist}
+                </Link>
+              </p>
             </div>
             <div className="service-duration-container">
               <p className="md">Duration</p>

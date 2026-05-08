@@ -194,6 +194,58 @@
   gap: 2rem;
 }
 
+.specialists-page .specialist-card {
+  display: grid;
+  grid-template-columns: minmax(16rem, 18rem) 1fr;
+  gap: 2rem;
+  align-items: start;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 1.5rem;
+}
+
+.specialists-page .specialist-card-image {
+  width: 100%;
+  max-width: 18rem;
+  overflow: hidden;
+  border-radius: 1.5rem;
+}
+
+.specialists-page .specialist-card-image img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+}
+
+.specialists-page .specialist-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.specialist-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.specialists-page .service-meta-container {
+  padding: 2rem 2rem 1rem 2rem;
+  gap: 1rem;
+}
+
+.specialists-page .service-meta-header-divider {
+  margin-bottom: 1rem;
+}
+
+.specialists-list .container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
 @media (max-width: 1024px) {
   .service-hero {
     flex-direction: column;

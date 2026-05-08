@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ContactPage from "./pages/ContactPage";
 import LabPage from "./pages/LabPage";
 import UnitPage from "./pages/UnitPage";
+import SpecialistPage from "./pages/SpecialistPage";
 import ProjectPage from "./pages/ProjectPage";
 import WorkPage from "./pages/WorkPage";
 import WorkPages from "./pages/WorkPages";
@@ -277,6 +278,19 @@ function App() {
                 title="Lab"
                 modulePaths={LAB_MODULES}
                 component={LabPage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/lab/specialists"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Specialists"
+                modulePaths={LAB_MODULES}
+                component={SpecialistPage}
                 clearOverflow
               />
             </Layout>
