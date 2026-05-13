@@ -26,7 +26,7 @@ export default function LogIn() {
       // Логирование для отладки
       console.log("📤 Отправляю данные:", formData);
 
-      const response = await fetch("http://localhost:5001/api/Auth/login", {
+      const response = await fetch("http://localhost:5000/api/Auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

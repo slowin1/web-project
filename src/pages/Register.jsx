@@ -30,7 +30,7 @@ export default function Register() {
             // Логирование для отладки
             console.log("📤 Отправляю данные при регистрации:", formData);
 
-            const response = await fetch("http://localhost:5001/api/Auth/register", {
+            const response = await fetch("http://localhost:5000/api/Auth/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
