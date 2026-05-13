@@ -15,11 +15,10 @@ import "/css/footer.css";
 import "/css/login.css";
 import "/css/forgot-password.css";
 import "/css/admin.css";
-
-
+import "/css/profile.css";
 
 createRoot(document.getElementById("root")).render(
   <ThemeProvider>
     <App />
-  </ThemeProvider>
+  </ThemeProvider>,
 );
