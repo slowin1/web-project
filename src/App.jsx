@@ -11,7 +11,7 @@ import LogIn from "./pages/LogIn";
 import ProfilePage from "./pages/Profile";
 import AdminPage from "./pages/Admin";
 import ForgotPassword from "./pages/ForgotPassword";
-
+import Register from "./pages/Register";
 
 const HOME_MODULES = [
   "/js/preloader.js",
@@ -144,7 +144,12 @@ function usePageRuntime({ title, modulePaths, clearOverflow = false }) {
   }, [clearOverflow, modulePaths, title]);
 }
 
-function RoutedPage({ component: Component, title, modulePaths, clearOverflow }) {
+function RoutedPage({
+  component: Component,
+  title,
+  modulePaths,
+  clearOverflow,
+}) {
   usePageRuntime({ title, modulePaths, clearOverflow });
 
   return <Component />;
@@ -232,7 +237,7 @@ function HomePage() {
               data-animate-on-scroll="false"
               data-animate-delay="1"
             >
-              [ Engineered by clavik ]
+              [ Engineered by Славик Нагорянский ]
             </p>
           </div>
         </div>
@@ -266,9 +271,30 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout><HomePage /></Layout>} />
-        <Route path="/index" element={<Layout><HomePage /></Layout>} />
-        <Route path="/index.html" element={<Layout><HomePage /></Layout>} />
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <HomePage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/index"
+          element={
+            <Layout>
+              <HomePage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/index.html"
+          element={
+            <Layout>
+              <HomePage />
+            </Layout>
+          }
+        />
         <Route
           path="/lab"
           element={
@@ -360,47 +386,60 @@ function App() {
             </Layout>
           }
         />
-          <Route
-            path="/profile"
-            element={
-              <Layout>
-                <RoutedPage
-                  title="Profile"
-                  modulePaths={PROFILE_MODULES}
-                  component={ProfilePage}
-                  clearOverflow
-                />
-              </Layout>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <Layout>
-                <RoutedPage
-                  title="Admin"
-                  modulePaths={ADMIN_MODULES}
-                  component={AdminPage}
-                  clearOverflow
-                />
-              </Layout>
-            }
-          />
-           <Route
-            path="/forgot-password"
-            element={
-              <Layout>
-                <RoutedPage
-                  title="ForgotPassword"
-                  modulePaths={FORGOT_PASSWORD_MODULES}
-                  component={ForgotPassword}
-                  clearOverflow
-                />
-              </Layout>
-            }
-          />
+        <Route
+          path="/profile"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Profile"
+                modulePaths={PROFILE_MODULES}
+                component={ProfilePage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Admin"
+                modulePaths={ADMIN_MODULES}
+                component={AdminPage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <Layout>
+              <RoutedPage
+                title="ForgotPassword"
+                modulePaths={FORGOT_PASSWORD_MODULES}
+                component={ForgotPassword}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/Register"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Register"
+                modulePaths={LOG_IN_MODULES}
+                component={Register}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </Routes>{" "}
     </BrowserRouter>
   );
 }

@@ -36,11 +36,21 @@ export default function Footer() {
 
             <div className="footer-col">
               <div className="footer-sub-col">
-                <a href="/"><h3>Главная</h3></a>
-                <a href="/lab"><h3>Услуги</h3></a>
-                <a href="/work"><h3>Работы</h3></a>
-                <a href="/project"><h3>Проекты</h3></a>
-                <a href="/contact"><h3>Контакты</h3></a>
+                <a href="/">
+                  <h3>Главная</h3>
+                </a>
+                <a href="/lab">
+                  <h3>Услуги</h3>
+                </a>
+                <a href="/work">
+                  <h3>Работы</h3>
+                </a>
+                <a href="/project">
+                  <h3>Проекты</h3>
+                </a>
+                <a href="/contact">
+                  <h3>Контакты</h3>
+                </a>
               </div>
 
               <div className="footer-sub-col">
@@ -48,29 +58,37 @@ export default function Footer() {
                   href="https://x.com/codegridweb"
                   target="_blank"
                   rel="noopener noreferrer"
-                >Twitter</a>
+                >
+                  Twitter
+                </a>
                 <a
                   href="https://www.instagram.com/clavik_nagoreanskii/"
                   target="_blank"
                   rel="noopener noreferrer"
-                >Instagram</a>
+                >
+                  Instagram
+                </a>
                 <a
                   href="https://codegrid.gumroad.com/l/codegridpro"
                   target="_blank"
                   rel="noopener noreferrer"
-                >Gumroad</a>
+                >
+                  Gumroad
+                </a>
                 <a
                   href="https://www.youtube.com/@codegrid"
                   target="_blank"
                   rel="noopener noreferrer"
-                >YouTube</a>
+                >
+                  YouTube
+                </a>
               </div>
             </div>
           </div>
 
           <div className="footer-row">
             <p className="type-mono">MWT 19 February '26</p>
-            <p className="type-mono">[ Engineered by clavik ]</p>
+            <p className="type-mono">[ Engineered by Славик Нагорянский ]</p>
           </div>
         </div>
       </div>

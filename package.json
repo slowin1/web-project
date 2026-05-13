@@ -13,7 +13,13 @@
     "url": "git+https://github.com/harrnish/deadspace.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Славик Нагорянский",
+  "contributors": [
+    {
+      "name": "Славик Нагорянский",
+      "email": "slaviknagoranskij@MacBook-Air-Slavik.local"
+    }
+  ],
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/harrnish/deadspace/issues"
