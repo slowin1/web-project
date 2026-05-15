@@ -156,6 +156,38 @@ function RoutedPage({
   return <Component />;
 }
 
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function isAdminSession() {
+  const token = localStorage.getItem("authToken") || localStorage.getItem("adminToken");
+  const user = getStoredUser();
+
+  return Boolean(token && user?.userName?.toLowerCase() === "admin");
+}
+
+function AdminRoute() {
+  if (!isAdminSession()) {
+    return <Navigate to="/LogIn" replace />;
+  }
+
+  return (
+    <Layout>
+      <RoutedPage
+        title="Admin"
+        modulePaths={ADMIN_MODULES}
+        component={AdminPage}
+        clearOverflow
+      />
+    </Layout>
+  );
+}
+
 function HomePage() {
   const modulesLoadedRef = React.useRef(false);
 
@@ -415,16 +447,7 @@ function App() {
         />
         <Route
           path="/admin"
-          element={
-            <Layout>
-              <RoutedPage
-                title="Admin"
-                modulePaths={ADMIN_MODULES}
-                component={AdminPage}
-                clearOverflow
-              />
-            </Layout>
-          }
+          element={<AdminRoute />}
         />
         <Route
           path="/forgot-password"

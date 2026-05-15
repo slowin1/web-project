@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
 export default function LogIn() {
   const [formData, setFormData] = useState({
     userName: "",
@@ -26,7 +28,7 @@ export default function LogIn() {
       // Логирование для отладки
       console.log("📤 Отправляю данные:", formData);
 
-      const response = await fetch("http://localhost:5000/api/Auth/login", {
+      const response = await fetch(`${API_BASE_URL}/Auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,8 +56,23 @@ export default function LogIn() {
       console.log("✅ Распарсенные данные:", data);
 
       if (response.ok) {
-        // В реальном приложении здесь нужно сохранять токен
-        localStorage.setItem("userToken", data.token);
+        // Сохраняем токен
+        if (data.token) {
+          localStorage.setItem("authToken", data.token);
+        }
+
+        localStorage.setItem("user", JSON.stringify(data));
+
+        if (data.userName?.toLowerCase() === "admin") {
+          if (data.token) {
+            localStorage.setItem("adminToken", data.token);
+          }
+
+          navigate("/admin", { replace: true });
+          return;
+        }
+
+        localStorage.removeItem("adminToken");
         navigate("/profile");
       } else {
         setError(data.message || `Ошибка: ${response.statusText}`);

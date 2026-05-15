@@ -2,17 +2,38 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { massageServices } from "../data/massageServices";
 
-// Backend API configuration (same base URL as LogIn.jsx)
-const API_BASE_URL = "http://localhost:5032";
+// Backend API configuration
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 const API_ENDPOINTS = {
-  getProfile: `${API_BASE_URL}/api/auth/profile`,
-  updateProfile: `${API_BASE_URL}/api/auth/profile`,
-  changePassword: `${API_BASE_URL}/api/auth/change-password`,
-  logout: `${API_BASE_URL}/api/auth/logout`,
-  deleteAccount: `${API_BASE_URL}/api/auth/account`,
-  getBookings: `${API_BASE_URL}/api/bookings`,
-  cancelBooking: `${API_BASE_URL}/api/bookings`,
+  getProfile: `${API_BASE_URL}/Auth/profile`,
+  updateProfile: `${API_BASE_URL}/Auth/profile`,
+  changePassword: `${API_BASE_URL}/Auth/change-password`,
+  logout: `${API_BASE_URL}/Auth/logout`,
+  deleteAccount: `${API_BASE_URL}/Auth/account`,
+  getBookings: `${API_BASE_URL}/ServiceBookings`,
+  cancelBooking: `${API_BASE_URL}/ServiceBookings`,
 };
+
+function formatBookingTime(value) {
+  if (!value) return "";
+
+  return new Date(value).toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function mapApiBooking(booking) {
+  return {
+    id: booking.id,
+    serviceId: Number(booking.bookingId),
+    serviceName: booking.bookingName,
+    specialist: booking.bookingDescription,
+    date: booking.bookingDate,
+    time: formatBookingTime(booking.bookingTime),
+    status: "confirmed",
+  };
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -136,7 +157,8 @@ export default function ProfilePage() {
       }
 
       const data = await response.json();
-      setBookings(data.bookings || []);
+      const apiBookings = Array.isArray(data) ? data : data.bookings || [];
+      setBookings(apiBookings.map(mapApiBooking));
     } catch (err) {
       console.error("Bookings load error:", err);
 

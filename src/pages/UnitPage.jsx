@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
 import Product from "../components/Product/Product";
+import ServiceBooking from "../components/ServiceBooking/ServiceBooking";
 import { massageServices } from "../data/massageServices";
 import "../../css/unit.css";
 import gsap from "gsap";
@@ -11,7 +12,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const API_BASE_URL = "http://localhost:5032";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 export default function UnitPage() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ export default function UnitPage() {
   const [relatedServices, setRelatedServices] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   const currentService =
     massageServices.find((s) => s.id === parseInt(id)) || massageServices[0];
@@ -131,7 +133,7 @@ export default function UnitPage() {
     ScrollTrigger.refresh();
   }, []);
 
-  const handleBookNow = async () => {
+  const handleBookNow = () => {
     const token = localStorage.getItem("authToken");
 
     if (!token) {
@@ -139,52 +141,8 @@ export default function UnitPage() {
       return;
     }
 
-    // Generate a simple booking date (tomorrow, 14:00) — a real app would have a date picker
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const bookingDate = tomorrow.toISOString().split("T")[0];
-    const bookingTime = "14:00";
-
-    const newBooking = {
-      id: Date.now().toString(),
-      serviceId: currentService.id,
-      serviceName: currentService.name,
-      specialist: currentService.specialist,
-      date: bookingDate,
-      time: bookingTime,
-      duration: currentService.duration,
-      price: currentService.price,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-
-    setBookingSuccess(false);
-    setBookingError("");
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newBooking),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create booking");
-      }
-    } catch (err) {
-      console.error("Booking error:", err);
-
-      // Fallback: save to localStorage
-      const stored = JSON.parse(localStorage.getItem("userBookings") || "[]");
-      stored.unshift(newBooking);
-      localStorage.setItem("userBookings", JSON.stringify(stored));
-    }
-
-    setBookingSuccess(true);
-    setTimeout(() => setBookingSuccess(false), 4000);
+    // Открываем модальное окно с календарем
+    setShowBookingModal(true);
   };
 
   const handleSaveService = () => {
@@ -398,6 +356,23 @@ export default function UnitPage() {
           </div>
         </div>
       </section>
+
+      {showBookingModal && (
+        <div className="booking-modal-overlay" onClick={() => setShowBookingModal(false)}>
+          <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="booking-modal-close"
+              onClick={() => setShowBookingModal(false)}
+            >
+              ✕
+            </button>
+            <ServiceBooking 
+              service={currentService}
+              onClose={() => setShowBookingModal(false)}
+            />
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
