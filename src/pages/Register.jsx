@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
 export default function Register() {
     const [formData, setFormData] = useState({
         firstName: "",
@@ -30,7 +32,7 @@ export default function Register() {
             // Логирование для отладки
             console.log("📤 Отправляю данные при регистрации:", formData);
 
-            const response = await fetch("http://localhost:5000/api/Auth/register", {
+            const response = await fetch(`${API_BASE_URL}/Auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -58,6 +60,10 @@ export default function Register() {
             console.log("✅ Распарсенные данные:", data);
 
             if (response.ok) {
+                // Сохраняем токен если он есть в ответе
+                if (data.token) {
+                    localStorage.setItem("authToken", data.token);
+                }
                 alert("Registration successful!");
                 navigate("/LogIn");
             } else {

@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_URL || "/api";
 
 // Helper function for API requests
 async function apiRequest(endpoint, options = {}) {
@@ -97,6 +97,24 @@ export const analyticsAPI = {
     apiRequest(`/analytics/overview?period=${period}`),
   getPerformance: (type = "pages") =>
     apiRequest(`/analytics/performance/${type}`),
+};
+
+// Bookings API
+export const bookingsAPI = {
+  create: (data) =>
+    apiRequest("/bookings", { method: "POST", body: JSON.stringify(data) }),
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/bookings${queryString ? `?${queryString}` : ""}`);
+  },
+  getById: (id) => apiRequest(`/bookings/${id}`),
+  update: (id, data) =>
+    apiRequest(`/bookings/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/bookings/${id}`, { method: "DELETE" }),
+  getByUser: (userId) => apiRequest(`/bookings/user/${userId}`),
+  getByService: (serviceId) => apiRequest(`/bookings/service/${serviceId}`),
+  getAvailableSlots: (serviceId, date) =>
+    apiRequest(`/bookings/available-slots?serviceId=${serviceId}&date=${date}`),
 };
 
 export { apiRequest };

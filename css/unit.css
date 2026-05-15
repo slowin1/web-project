@@ -398,6 +398,103 @@
     }
 }
 
+/* Service Booking Section */
+.service-booking-section {
+    padding: 4rem 0;
+    background: var(--bg_lab);
+}
+
+.service-booking-section .service-booking-container {
+    background: var(--booking-bg, #fff);
+}
+
+/* Booking Modal */
+.booking-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-out;
+    padding: 1rem;
+}
+
+.booking-modal {
+    background: var(--booking-bg, #fff);
+    color: var(--booking-text, #000);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    max-width: 600px;
+}
+
+.booking-modal-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: var(--booking-text-secondary, #666);
+    z-index: 10000;
+    transition: all 0.2s ease;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.booking-modal-close:hover {
+    color: var(--booking-accent, #4CAF50);
+    transform: scale(1.2);
+}
+
+.booking-modal .service-booking-container {
+    max-width: none;
+    margin: 0;
+    padding: 2rem;
+    box-shadow: none;
+    animation: none;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .booking-modal {
+        max-height: 95vh;
+        border-radius: 12px;
+    }
+
+    .booking-modal .service-booking-container {
+        padding: 1.5rem;
+    }
+
+    .booking-modal-close {
+        top: 1rem;
+        right: 1rem;
+        font-size: 1.5rem;
+    }
+}
+
 @media (min-width: 2000px) {
     .service-meta-container {
         padding: 25svh 4rem 4rem;
