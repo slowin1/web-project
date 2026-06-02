@@ -39,18 +39,20 @@ export default function LogIn() {
 
       console.log("📨 Статус ответа:", response.status, response.statusText);
 
-      // Читаем текст один раз
+      // Читаем ответ один раз и парсим JSON только если это действительно JSON.
       const responseText = await response.text();
       console.log("📝 Ответ бэка (текст):", responseText);
 
-      // Пытаемся распарсить JSON
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseErr) {
-        console.error("❌ Ошибка парсинга JSON:", parseErr);
-        setError("Ошибка: сервер вернул неправильный формат");
-        return;
+      const contentType = response.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+
+      let data = null;
+      if (responseText && isJson) {
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseErr) {
+          console.error("❌ Ошибка парсинга JSON:", parseErr);
+        }
       }
 
       console.log("✅ Распарсенные данные:", data);
@@ -63,10 +65,30 @@ export default function LogIn() {
 
         localStorage.setItem("user", JSON.stringify(data));
 
-        if (data.userName?.toLowerCase() === "admin") {
+        // Decide where to go after login.
+        // Prefer role-based logic (admin should be role=4 / "4").
+        const roleClaim = data?.role ?? data?.Role;
+        const isAdminByRole =
+          roleClaim === 4 || roleClaim === "4" ||
+          (typeof roleClaim === "string" && roleClaim.toLowerCase() === "admin");
+
+        // Fallback: older logic by username.
+        const isAdminByUsername = data?.userName?.toLowerCase() === "admin";
+
+        if (isAdminByRole || isAdminByUsername) {
           if (data.token) {
             localStorage.setItem("adminToken", data.token);
           }
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...data.user,
+              // keep compatibility with existing checks
+              role: data.user?.role ?? roleClaim,
+              username: data.user?.username ?? data.userName,
+              userName: data.user?.userName ?? data.userName,
+            })
+          );
 
           navigate("/admin", { replace: true });
           return;
@@ -74,8 +96,15 @@ export default function LogIn() {
 
         localStorage.removeItem("adminToken");
         navigate("/profile");
+
       } else {
-        setError(data.message || `Ошибка: ${response.statusText}`);
+        if (response.status === 401) {
+          setError(data?.message || "Неверный логин или пароль");
+        } else if (response.status === 403) {
+          setError(data?.message || "Доступ запрещен (403)");
+        } else {
+          setError(data?.message || `Ошибка: ${response.status} ${response.statusText}`);
+        }
       }
     } catch (err) {
       console.error("🔥 Ошибка сети/подключения:", err.message);

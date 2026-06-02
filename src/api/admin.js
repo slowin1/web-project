@@ -1,10 +1,32 @@
+import {
+  normalizeService,
+  normalizeServiceCategory,
+  normalizeServiceImage,
+  toCreateServiceDto,
+  toCreateServiceImageDto,
+} from "./dtoMappers";
+
 // API Configuration
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "/api";
 
+const ENDPOINTS = {
+  users: "/Users",
+  services: "/Services",
+  serviceCategories: "/ServiceCategories",
+  serviceImages: "/ServiceImages",
+  serviceBookings: "/ServiceBookings",
+  specialists: "/Specialists",
+  serviceTimeSlots: "/ServiceTimeSlots",
+  specialistWorkSchedules: "/SpecialistWorkSchedules",
+  specialistReviews: "/SpecialistReviews",
+  loginLogs: "/LoginLogs",
+};
+
 // Helper function for API requests
 async function apiRequest(endpoint, options = {}) {
-  const token = localStorage.getItem("adminToken");
+  const token =
+    localStorage.getItem("adminToken") || localStorage.getItem("authToken");
 
   const config = {
     ...options,
@@ -25,6 +47,15 @@ async function apiRequest(endpoint, options = {}) {
         window.location.href = "/LogIn";
       }
       throw new Error(`API Error: ${response.status}`);
+    }
+
+    if (response.status === 204) {
+      return null;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      return null;
     }
 
     return await response.json();
@@ -48,14 +79,139 @@ export const dashboardAPI = {
 export const usersAPI = {
   getAll: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    return apiRequest(`/users${queryString ? `?${queryString}` : ""}`);
+    return apiRequest(`${ENDPOINTS.users}${queryString ? `?${queryString}` : ""}`);
   },
-  getById: (id) => apiRequest(`/users/${id}`),
+  getById: (id) => apiRequest(`${ENDPOINTS.users}/${id}`),
   create: (data) =>
-    apiRequest("/users", { method: "POST", body: JSON.stringify(data) }),
+    apiRequest(ENDPOINTS.users, { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) =>
-    apiRequest(`/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  delete: (id) => apiRequest(`/users/${id}`, { method: "DELETE" }),
+    apiRequest(`${ENDPOINTS.users}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`${ENDPOINTS.users}/${id}`, { method: "DELETE" }),
+};
+
+export const servicesAPI = {
+  getAll: async () => {
+    const data = await apiRequest(ENDPOINTS.services);
+    return Array.isArray(data)
+      ? data.map(normalizeService).filter(Boolean)
+      : [];
+  },
+  getById: async (id) => normalizeService(await apiRequest(`${ENDPOINTS.services}/${id}`)),
+  create: async (form) => {
+    const data = await apiRequest(ENDPOINTS.services, {
+      method: "POST",
+      body: JSON.stringify(toCreateServiceDto(form)),
+    });
+    return normalizeService(data);
+  },
+  update: async (id, form) => {
+    const data = await apiRequest(`${ENDPOINTS.services}/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(toCreateServiceDto(form)),
+    });
+    return normalizeService(data);
+  },
+  delete: (id) => apiRequest(`${ENDPOINTS.services}/${id}`, { method: "DELETE" }),
+};
+
+export const serviceCategoriesAPI = {
+  getAll: async () => {
+    const data = await apiRequest(ENDPOINTS.serviceCategories);
+    return Array.isArray(data)
+      ? data.map(normalizeServiceCategory).filter(Boolean)
+      : [];
+  },
+  getById: async (id) =>
+    normalizeServiceCategory(
+      await apiRequest(`${ENDPOINTS.serviceCategories}/${id}`),
+    ),
+  create: (data) =>
+    apiRequest(ENDPOINTS.serviceCategories, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    apiRequest(`${ENDPOINTS.serviceCategories}/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id) =>
+    apiRequest(`${ENDPOINTS.serviceCategories}/${id}`, { method: "DELETE" }),
+};
+
+export const serviceImagesAPI = {
+  getAll: async () => {
+    const data = await apiRequest(ENDPOINTS.serviceImages);
+    return Array.isArray(data)
+      ? data.map(normalizeServiceImage).filter(Boolean)
+      : [];
+  },
+  getById: async (id) =>
+    normalizeServiceImage(await apiRequest(`${ENDPOINTS.serviceImages}/${id}`)),
+  create: async (form) => {
+    const data = await apiRequest(ENDPOINTS.serviceImages, {
+      method: "POST",
+      body: JSON.stringify(toCreateServiceImageDto(form)),
+    });
+    return normalizeServiceImage(data);
+  },
+  update: async (id, form) => {
+    const data = await apiRequest(`${ENDPOINTS.serviceImages}/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(toCreateServiceImageDto(form)),
+    });
+    return normalizeServiceImage(data);
+  },
+  delete: (id) =>
+    apiRequest(`${ENDPOINTS.serviceImages}/${id}`, { method: "DELETE" }),
+};
+
+export const specialistsAPI = {
+  getAll: () => apiRequest(ENDPOINTS.specialists),
+  getById: (id) => apiRequest(`${ENDPOINTS.specialists}/${id}`),
+  create: (data) => apiRequest(ENDPOINTS.specialists, { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    apiRequest(`${ENDPOINTS.specialists}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`${ENDPOINTS.specialists}/${id}`, { method: "DELETE" }),
+};
+
+export const serviceTimeSlotsAPI = {
+  getAll: () => apiRequest(ENDPOINTS.serviceTimeSlots),
+  getById: (id) => apiRequest(`${ENDPOINTS.serviceTimeSlots}/${id}`),
+  create: (data) =>
+    apiRequest(ENDPOINTS.serviceTimeSlots, { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    apiRequest(`${ENDPOINTS.serviceTimeSlots}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`${ENDPOINTS.serviceTimeSlots}/${id}`, { method: "DELETE" }),
+};
+
+export const specialistWorkSchedulesAPI = {
+  getAll: () => apiRequest(ENDPOINTS.specialistWorkSchedules),
+  getById: (id) => apiRequest(`${ENDPOINTS.specialistWorkSchedules}/${id}`),
+  create: (data) =>
+    apiRequest(ENDPOINTS.specialistWorkSchedules, { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    apiRequest(`${ENDPOINTS.specialistWorkSchedules}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`${ENDPOINTS.specialistWorkSchedules}/${id}`, { method: "DELETE" }),
+};
+
+export const specialistReviewsAPI = {
+  getAll: () => apiRequest(ENDPOINTS.specialistReviews),
+  getById: (id) => apiRequest(`${ENDPOINTS.specialistReviews}/${id}`),
+  create: (data) =>
+    apiRequest(ENDPOINTS.specialistReviews, { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    apiRequest(`${ENDPOINTS.specialistReviews}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`${ENDPOINTS.specialistReviews}/${id}`, { method: "DELETE" }),
+};
+
+export const loginLogsAPI = {
+  getAll: () => apiRequest(ENDPOINTS.loginLogs),
+  getById: (id) => apiRequest(`${ENDPOINTS.loginLogs}/${id}`),
+  create: (data) => apiRequest(ENDPOINTS.loginLogs, { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    apiRequest(`${ENDPOINTS.loginLogs}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`${ENDPOINTS.loginLogs}/${id}`, { method: "DELETE" }),
 };
 
 // Content API
@@ -102,19 +258,19 @@ export const analyticsAPI = {
 // Bookings API
 export const bookingsAPI = {
   create: (data) =>
-    apiRequest("/bookings", { method: "POST", body: JSON.stringify(data) }),
+    apiRequest(ENDPOINTS.serviceBookings, { method: "POST", body: JSON.stringify(data) }),
   getAll: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    return apiRequest(`/bookings${queryString ? `?${queryString}` : ""}`);
+    return apiRequest(`${ENDPOINTS.serviceBookings}${queryString ? `?${queryString}` : ""}`);
   },
-  getById: (id) => apiRequest(`/bookings/${id}`),
+  getById: (id) => apiRequest(`${ENDPOINTS.serviceBookings}/${id}`),
   update: (id, data) =>
-    apiRequest(`/bookings/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  delete: (id) => apiRequest(`/bookings/${id}`, { method: "DELETE" }),
-  getByUser: (userId) => apiRequest(`/bookings/user/${userId}`),
-  getByService: (serviceId) => apiRequest(`/bookings/service/${serviceId}`),
+    apiRequest(`${ENDPOINTS.serviceBookings}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`${ENDPOINTS.serviceBookings}/${id}`, { method: "DELETE" }),
+  getByUser: (userId) => apiRequest(`${ENDPOINTS.serviceBookings}/user/${userId}`),
+  getByService: (serviceId) => apiRequest(`${ENDPOINTS.serviceBookings}/service/${serviceId}`),
   getAvailableSlots: (serviceId, date) =>
-    apiRequest(`/bookings/available-slots?serviceId=${serviceId}&date=${date}`),
+    apiRequest(`${ENDPOINTS.serviceBookings}/available-slots?serviceId=${serviceId}&date=${date}`),
 };
 
 export { apiRequest };

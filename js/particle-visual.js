@@ -1,11 +1,12 @@
-// webgl particle system with mouse distortion
 const PV = {
   config: {
     canvasBg: { light: "#E7E5E4", dark: "#E7E5E4" },
+
     logoSize: 2000,
-    distortionRadius: 2000,
-    forceStrength: 0.05,
-    maxDisplacement: 1000,
+    distortionRadius: 500,
+    maxDisplacement: 180,
+
+    forceStrength: 0.15,
     returnForce: 0.1,
     logoPath: "/lab/hero-visual.png",
     particleSpacing: 2,
@@ -25,7 +26,6 @@ const PV = {
   themeObserver: null,
 };
 
-// initialization
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
@@ -62,7 +62,6 @@ function init() {
   setupThemeListener();
 }
 
-// shader setup
 function setupShaders() {
   const vs = `
     precision mediump float;
@@ -101,30 +100,47 @@ function setupShaders() {
   PV.gl.linkProgram(PV.program);
 }
 
-// image loading and particle creation
 function loadImage() {
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
     const temp = document.createElement("canvas");
     const ctx = temp.getContext("2d", { willReadFrequently: true });
-    temp.width = temp.height = PV.config.logoSize;
+    const logoSize = PV.config.logoSize;
+    temp.width = temp.height = logoSize;
 
-    const s = PV.config.logoSize * 0.9;
-    const o = (PV.config.logoSize - s) / 2;
+    const s = logoSize * 0.9;
+    const o = (logoSize - s) / 2;
     ctx.drawImage(img, o, o, s, s);
 
-    createParticles(
-      ctx.getImageData(0, 0, PV.config.logoSize, PV.config.logoSize).data,
-    );
+    createParticles(ctx.getImageData(0, 0, logoSize, logoSize).data);
   };
   img.src = PV.config.logoPath;
 }
 
+function computeScale() {
+  // Размер логотипа = 38% от меньшей стороны viewport.
+  // Работает одинаково на любом aspect ratio (16:9, 16:10, 4:3 и т.д.)
+  const vmin = Math.min(innerWidth, innerHeight);
+  return (vmin * 1.0) / PV.config.logoSize;
+}
+
+PV.getDistortionRadius = () => {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const vmin = Math.min(innerWidth, innerHeight);
+  return (vmin * PV.config.distortionRadius / 1000) * dpr;
+};
+
+PV.getMaxDisplacement = () => {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const vmin = Math.min(innerWidth, innerHeight);
+  return (vmin * PV.config.maxDisplacement / 1000) * dpr;
+};
+
 function createParticles(pixels) {
   const cx = PV.canvas.width / 2;
   const cy = PV.canvas.height / 2;
-  const scale = Math.min(innerWidth / 1920, 1);
+  const scale = computeScale() * Math.min(devicePixelRatio || 1, 2);
   const dim = PV.config.logoSize;
   const spacing = PV.config.particleSpacing;
 
@@ -169,13 +185,13 @@ function createParticles(pixels) {
   animate();
 }
 
-// animation loop with physics
 function animate() {
   PV.animFrame = requestAnimationFrame(animate);
 
   if (!PV.isMobile && PV.execCount > 0) {
     PV.execCount--;
-    const rad = PV.config.distortionRadius ** 2;
+    const rad = PV.getDistortionRadius() ** 2;
+
     let needsUpdate = false;
 
     for (let i = 0; i < PV.particles.length; i++) {
@@ -191,12 +207,10 @@ function animate() {
         const distOrig = Math.sqrt((x - p.ox) ** 2 + (y - p.oy) ** 2);
         const mult = Math.max(
           0.1,
-          1 - distOrig / (PV.config.maxDisplacement * 2),
+          1 - distOrig / (PV.getMaxDisplacement() * 2),
         );
-        p.vx +=
-          f * Math.cos(Math.atan2(dy, dx)) * PV.config.forceStrength * mult;
-        p.vy +=
-          f * Math.sin(Math.atan2(dy, dx)) * PV.config.forceStrength * mult;
+        p.vx += f * Math.cos(Math.atan2(dy, dx)) * PV.config.forceStrength * mult;
+        p.vy += f * Math.sin(Math.atan2(dy, dx)) * PV.config.forceStrength * mult;
         needsUpdate = true;
       }
 
@@ -207,11 +221,10 @@ function animate() {
         const doy = ny - p.oy;
         const distOrig = Math.sqrt(dox * dox + doy * doy);
 
-        if (distOrig > PV.config.maxDisplacement) {
-          const s = PV.config.maxDisplacement / distOrig;
-          const ds =
-            s +
-            (1 - s) * Math.exp(-(distOrig - PV.config.maxDisplacement) * 0.02);
+        if (distOrig > PV.getMaxDisplacement()) {
+          const maxDisp = PV.getMaxDisplacement();
+          const s = maxDisp / distOrig;
+          const ds = s + (1 - s) * Math.exp(-(distOrig - PV.getMaxDisplacement()) * 0.02);
           PV.posArray[i * 2] = p.ox + dox * ds;
           PV.posArray[i * 2 + 1] = p.oy + doy * ds;
           p.vx *= 0.7;
@@ -233,7 +246,6 @@ function animate() {
   render();
 }
 
-// webgl render
 function render() {
   const isDark = document.documentElement.classList.contains("dark");
   const bgColor = isDark ? PV.config.canvasBg.dark : PV.config.canvasBg.light;
@@ -265,7 +277,6 @@ function render() {
   PV.gl.drawArrays(PV.gl.POINTS, 0, PV.geometry.count);
 }
 
-// event handlers
 function handleMouseMove(e) {
   const rect = PV.canvas.getBoundingClientRect();
   const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -275,7 +286,10 @@ function handleMouseMove(e) {
 }
 
 function handleResize() {
+  if (!PV.geometry || !PV.posArray || !PV.gl) return;
+
   PV.isMobile = innerWidth < 1000;
+
   const dpr = Math.min(devicePixelRatio || 1, 2);
   PV.canvas.width = innerWidth * dpr;
   PV.canvas.height = innerHeight * dpr;
@@ -284,7 +298,7 @@ function handleResize() {
 
   const cx = PV.canvas.width / 2;
   const cy = PV.canvas.height / 2;
-  const scale = Math.min(innerWidth / 1920, 1);
+  const scale = computeScale() * dpr;
   const dim = PV.config.logoSize;
 
   for (let i = 0; i < PV.particles.length; i++) {
@@ -300,7 +314,6 @@ function handleResize() {
   PV.gl.bufferSubData(PV.gl.ARRAY_BUFFER, 0, PV.posArray);
 }
 
-// theme change listener
 function setupThemeListener() {
   PV.themeObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {

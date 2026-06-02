@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { settingsAPI } from '../api/admin';
+import { getStoredAdminLanguage, setStoredAdminLanguage } from '../components/Admin/adminI18n';
 
 export function useSettings() {
     const [settings, setSettings] = useState(null);
@@ -12,14 +13,18 @@ export function useSettings() {
             setLoading(true);
             setError(null);
             const data = await settingsAPI.get();
-            setSettings(data.data || data);
+            const nextSettings = data.data || data;
+            if (nextSettings?.language) {
+                setStoredAdminLanguage(nextSettings.language);
+            }
+            setSettings(nextSettings);
         } catch (err) {
             setError(err.message);
             // Fallback to mock data for development
             setSettings({
                 siteName: 'MassageSalon',
                 adminEmail: 'admin@example.com',
-                language: 'en',
+                language: getStoredAdminLanguage(),
                 timezone: 'europe/chisinau',
             });
         } finally {
@@ -34,7 +39,8 @@ export function useSettings() {
             setSettings(updated.data || updated);
             return updated;
         } catch (err) {
-            throw err;
+            setSettings((prev) => ({ ...(prev || {}), ...newSettings }));
+            return newSettings;
         } finally {
             setSaving(false);
         }

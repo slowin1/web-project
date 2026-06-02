@@ -10,9 +10,11 @@ import WorkPages from "./pages/WorkPages";
 import Layout from "./components/Layout";
 import LogIn from "./pages/LogIn";
 import ProfilePage from "./pages/Profile";
-import AdminPage from "./pages/Admin";
 import ForgotPassword from "./pages/ForgotPassword";
 import Register from "./pages/Register";
+import { AdminContent, AdminDashboard, AdminSettings, AdminServices, AdminUsers } from "./pages/Admin";
+import AdminLayout from "./components/Admin/AdminLayout";
+
 
 const HOME_MODULES = [
   "/js/preloader.js",
@@ -167,26 +169,54 @@ function getStoredUser() {
 function isAdminSession() {
   const token = localStorage.getItem("authToken") || localStorage.getItem("adminToken");
   const user = getStoredUser();
+  if (!token) return false;
 
-  return Boolean(token && user?.userName?.toLowerCase() === "admin");
+  // Prefer role from stored user
+  if (user?.role !== undefined && user?.role !== null) {
+    const r = String(user.role).toLowerCase();
+    // Accept both numeric and string roles
+    if (r === "4" || r === "admin") return true;
+  }
+
+  // Fallback: parse role claim from JWT
+  try {
+    const payloadBase64 = token.split(".")[1];
+    const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson);
+
+    const roleClaim = payload?.role ?? payload?.Role;
+    if (roleClaim === 4 || roleClaim === "4") return true;
+    if (typeof roleClaim === "string" && roleClaim.toLowerCase() === "admin") return true;
+  } catch (e) {
+    // ignore
+  }
+
+  return false;
 }
+
 
 function AdminRoute() {
   if (!isAdminSession()) {
     return <Navigate to="/LogIn" replace />;
   }
 
+  return <AdminRuntime />;
+}
+
+function AdminRuntime() {
+  usePageRuntime({
+    title: "Admin",
+    modulePaths: ADMIN_MODULES,
+    clearOverflow: true,
+  });
+
   return (
     <Layout>
-      <RoutedPage
-        title="Admin"
-        modulePaths={ADMIN_MODULES}
-        component={AdminPage}
-        clearOverflow
-      />
+      <AdminLayout />
     </Layout>
   );
 }
+
 
 function HomePage() {
   const modulesLoadedRef = React.useRef(false);
@@ -308,10 +338,13 @@ function App() {
           path="/"
           element={
             <Layout>
-              <HomePage />
+              {/* If admin: send to /admin to avoid profile/admin route conflicts */}
+              {isAdminSession() ? <Navigate to="/admin" replace /> : <HomePage />}
             </Layout>
           }
         />
+
+
         <Route
           path="/index"
           element={
@@ -445,10 +478,14 @@ function App() {
             </Layout>
           }
         />
-        <Route
-          path="/admin"
-          element={<AdminRoute />}
-        />
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="services" element={<AdminServices />} />
+          <Route path="content" element={<AdminContent />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
         <Route
           path="/forgot-password"
           element={
