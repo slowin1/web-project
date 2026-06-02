@@ -1,33 +1,48 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
-import { massageServices } from "../data/massageServices";
+import { fetchSpecialistsBundle, FALLBACK_IMAGE } from "../api/catalog";
 import "../../css/unit.css";
 
 export default function SpecialistPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [specialists, setSpecialists] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const selectedSlug = searchParams.get("specialist");
 
-  const specialists = useMemo(() => {
-    const grouped = massageServices.reduce((acc, service) => {
-      if (!acc[service.specialistSlug]) {
-        acc[service.specialistSlug] = {
-          specialist: service.specialist,
-          specialistSlug: service.specialistSlug,
-          specialistBio: service.specialistBio,
-          image: service.image,
-          services: [],
-        };
-      }
-      acc[service.specialistSlug].services.push(service);
-      return acc;
-    }, {});
+  useEffect(() => {
+    let isMounted = true;
 
-    return Object.values(grouped);
+    async function loadSpecialists() {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const data = await fetchSpecialistsBundle();
+        if (!isMounted) return;
+        setSpecialists(data);
+      } catch (error) {
+        console.error("Failed to load specialists:", error);
+        if (!isMounted) return;
+        setSpecialists([]);
+        setLoadError("Не удалось загрузить специалистов");
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadSpecialists();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -41,9 +56,6 @@ export default function SpecialistPage() {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [selectedSlug]);
-
-  const fallbackImage =
-    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
 
   return (
     <div className="specialists-page">
@@ -68,6 +80,11 @@ export default function SpecialistPage() {
 
       <section className="specialists-list">
         <div className="container">
+          {isLoading && <p className="bodyCopy">Загрузка специалистов...</p>}
+          {!isLoading && loadError && <p className="bodyCopy">{loadError}</p>}
+          {!isLoading && !loadError && specialists.length === 0 && (
+            <p className="bodyCopy">Специалисты пока не добавлены</p>
+          )}
           {specialists.map((specialist) => (
             <div
               key={specialist.specialistSlug}
@@ -79,13 +96,13 @@ export default function SpecialistPage() {
                   src={specialist.image}
                   alt={specialist.specialist}
                   onError={(e) => {
-                    e.target.src = fallbackImage;
+                    e.target.src = FALLBACK_IMAGE;
                   }}
                 />
               </div>
               <div className="specialist-card-content">
                 <h4>{specialist.specialist}</h4>
-                <p className="bodyCopy lg">{specialist.specialistBio}</p>
+                <p className="bodyCopy lg">{specialist.specialistBio || "Описание специалиста пока не добавлено"}</p>
                 <p className="type-mono">Услуг: {specialist.services.length}</p>
                 <div className="specialist-services-list">
                   {specialist.services.map((service) => (

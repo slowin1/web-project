@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { massageServices } from "../data/massageServices";
 
 // Backend API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
@@ -23,15 +22,23 @@ function formatBookingTime(value) {
   });
 }
 
+function parseSpecialistFromDescription(description) {
+  if (!description) return "";
+  const match = description.match(/Специалист:\s*([^;]+)/i);
+  return match ? match[1].trim() : "";
+}
+
 function mapApiBooking(booking) {
   return {
     id: booking.id,
-    serviceId: Number(booking.bookingId),
+    serviceId: booking.bookingId,
     serviceName: booking.bookingName,
-    specialist: booking.bookingDescription,
+    specialist: parseSpecialistFromDescription(booking.bookingDescription),
     date: booking.bookingDate,
     time: formatBookingTime(booking.bookingTime),
     status: "confirmed",
+    duration: "-",
+    price: "-",
   };
 }
 
@@ -549,9 +556,6 @@ export default function ProfilePage() {
           ) : (
             <div className="bookings-list">
               {bookings.map((booking) => {
-                const service = massageServices.find(
-                  (s) => s.id === booking.serviceId,
-                );
                 const isActive =
                   booking.status === "confirmed" ||
                   booking.status === "pending";
@@ -564,21 +568,12 @@ export default function ProfilePage() {
                     <div className="booking-card-glow" />
                     <div className="booking-header">
                       <div className="booking-service-info">
-                        {service?.minimap && (
-                          <img
-                            src={service.minimap}
-                            alt={service.name}
-                            className="booking-thumb"
-                          />
-                        )}
                         <div>
                           <h3 className="booking-service-name">
-                            {service?.name ||
-                              booking.serviceName ||
-                              "Unknown Service"}
+                            {booking.serviceName || "Unknown Service"}
                           </h3>
                           <p className="booking-specialist">
-                            {service?.specialist || booking.specialist}
+                            {booking.specialist || "Специалист не указан"}
                           </p>
                         </div>
                       </div>
@@ -605,13 +600,13 @@ export default function ProfilePage() {
                       <div className="booking-detail">
                         <span className="detail-label">⏱ Duration</span>
                         <span className="detail-value">
-                          {service?.duration || booking.duration}
+                          {booking.duration}
                         </span>
                       </div>
                       <div className="booking-detail">
                         <span className="detail-label">💰 Price</span>
                         <span className="detail-value price-value">
-                          {service?.price || booking.price} руб
+                          {booking.price} руб
                         </span>
                       </div>
                     </div>
