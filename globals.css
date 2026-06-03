@@ -42,6 +42,7 @@
 html.dark {
   --bg: #0a0a0af1;
   --fg: #b3b3b3;
+  --bg_profile: #1e1e1ebd;
   --bg_lab: #0b0b11;
   --card-bg: #000000;
   --card-text: #fff;

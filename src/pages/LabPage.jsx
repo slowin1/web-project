@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import useDebounce from "../hooks/useDebounce";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
@@ -15,11 +14,15 @@ gsap.registerPlugin(ScrollTrigger);
 export default function LabPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("all");
+<<<<<<< HEAD
+  const [filteredServices, setFilteredServices] = useState(massageServices);
+=======
   const [allServices, setAllServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
   const [categories, setCategories] = useState([{ id: "all", name: "Все услуги", styleKey: "all" }]);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery, 250);
+>>>>>>> origin/main
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -88,10 +91,16 @@ export default function LabPage() {
       stagger: 0.05,
       ease: "power3.out",
       onComplete: () => {
+<<<<<<< HEAD
+        const filtered = massageServices.filter((service) => {
+          if (newCategory === "all") return true;
+          return service.category === newCategory;
+=======
         const filtered = allServices.filter((service) => {
           const matchesCategory = newCategory === "all" ? true : String(service.category) === String(newCategory);
           const matchesQuery = !searchQuery ? true : service.name.toLowerCase().includes(searchQuery.toLowerCase());
           return matchesCategory && matchesQuery;
+>>>>>>> origin/main
         });
 
         setFilteredServices(filtered);
@@ -99,6 +108,8 @@ export default function LabPage() {
     });
   };
 
+<<<<<<< HEAD
+=======
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
@@ -126,6 +137,7 @@ export default function LabPage() {
     });
   }, [debouncedQuery, activeCategory, allServices]);
 
+>>>>>>> origin/main
   useEffect(() => {
     productRefs.current = productRefs.current.slice(0, filteredServices.length);
     gsap.killTweensOf(productRefs.current);
@@ -218,14 +230,6 @@ export default function LabPage() {
           <div className="service-filter-bar">
             <div className="filter-bar-header">
               <p className="bodyCopy">Filters</p>
-            </div>
-            <div className="filter-bar-search">
-              <input
-                type="text"
-                placeholder="Поиск по названию"
-                value={searchQuery}
-                onChange={handleSearchChange}
-              />
             </div>
             <div className="filter-bar-tags">
               {categories.map((category) => (
