@@ -1,19 +1,36 @@
-import React, { useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import ContactPage from "./pages/ContactPage";
-import LabPage from "./pages/LabPage";
-import UnitPage from "./pages/UnitPage";
-import SpecialistPage from "./pages/SpecialistPage";
-import ProjectPage from "./pages/ProjectPage";
-import WorkPage from "./pages/WorkPage";
-import WorkPages from "./pages/WorkPages";
+import React, { Suspense, useEffect } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
-import LogIn from "./pages/LogIn";
-import ProfilePage from "./pages/Profile";
-import ForgotPassword from "./pages/ForgotPassword";
-import Register from "./pages/Register";
-import { AdminContent, AdminDashboard, AdminSettings, AdminServices, AdminUsers } from "./pages/Admin";
-import AdminLayout from "./components/Admin/AdminLayout";
+import { trackPageVisit } from "./api/analyticsTracker";
+const ContactPage = React.lazy(() => import("./pages/ContactPage"));
+const LabPage = React.lazy(() => import("./pages/LabPage"));
+const UnitPage = React.lazy(() => import("./pages/UnitPage"));
+const SpecialistPage = React.lazy(() => import("./pages/SpecialistPage"));
+const ProjectPage = React.lazy(() => import("./pages/ProjectPage"));
+const ProjectArticlePage = React.lazy(() => import("./pages/ProjectArticlePage"));
+const WorkPage = React.lazy(() => import("./pages/WorkPage"));
+const WorkPages = React.lazy(() => import("./pages/WorkPages"));
+const LogIn = React.lazy(() => import("./pages/LogIn"));
+const ProfilePage = React.lazy(() => import("./pages/Profile"));
+const SpecialistProfile = React.lazy(() => import("./pages/SpecialistProfile"));
+const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
+const Register = React.lazy(() => import("./pages/Register"));
+const AdminLayout = React.lazy(() => import("./components/Admin/AdminLayout"));
+const AdminContent = React.lazy(() =>
+  import("./pages/Admin").then((module) => ({ default: module.AdminContent })),
+);
+const AdminDashboard = React.lazy(() =>
+  import("./pages/Admin").then((module) => ({ default: module.AdminDashboard })),
+);
+const AdminSettings = React.lazy(() =>
+  import("./pages/Admin").then((module) => ({ default: module.AdminSettings })),
+);
+const AdminServices = React.lazy(() =>
+  import("./pages/Admin").then((module) => ({ default: module.AdminServices })),
+);
+const AdminUsers = React.lazy(() =>
+  import("./pages/Admin").then((module) => ({ default: module.AdminUsers })),
+);
 
 
 const HOME_MODULES = [
@@ -39,6 +56,13 @@ const LAB_MODULES = [
   "/js/clients.js",
 ];
 
+const UNIT_MODULES = [
+  "/js/transition.js",
+  "/js/nav.js",
+  "/js/menu.js",
+  "/js/animated-copy.js",
+];
+
 const WORK_MODULES = [
   "/js/lenis-scroll.js",
   "/js/transition.js",
@@ -49,6 +73,14 @@ const WORK_MODULES = [
 ];
 
 const PROJECT_MODULES = [
+  "/js/lenis-scroll.js",
+  "/js/transition.js",
+  "/js/nav.js",
+  "/js/menu.js",
+  "/js/animated-copy.js",
+];
+
+const PROJECT_DETAIL_MODULES = [
   "/js/lenis-scroll.js",
   "/js/transition.js",
   "/js/nav.js",
@@ -171,12 +203,14 @@ function isAdminSession() {
   const user = getStoredUser();
   if (!token) return false;
 
-  // Prefer role from stored user
+  // Check role from stored user (prefer role claim)
   if (user?.role !== undefined && user?.role !== null) {
     const r = String(user.role).toLowerCase();
-    // Accept both numeric and string roles
     if (r === "4" || r === "admin") return true;
   }
+
+  // Fallback: check by username (admin user)
+  if (user?.userName?.toLowerCase() === "admin") return true;
 
   // Fallback: parse role claim from JWT
   try {
@@ -194,6 +228,30 @@ function isAdminSession() {
   return false;
 }
 
+function isSpecialistSession() {
+  const token = localStorage.getItem("authToken") || localStorage.getItem("adminToken");
+  const user = getStoredUser();
+  if (!token) return false;
+
+  if (user?.role !== undefined && user?.role !== null) {
+    const r = String(user.role).toLowerCase();
+    if (r === "2" || r === "specialist") return true;
+  }
+
+  try {
+    const payloadBase64 = token.split(".")[1];
+    const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson);
+    const roleClaim = payload?.role ?? payload?.Role;
+    if (roleClaim === 2 || roleClaim === "2") return true;
+    if (typeof roleClaim === "string" && roleClaim.toLowerCase() === "specialist") return true;
+  } catch (e) {
+    // ignore
+  }
+
+  return false;
+}
+
 
 function AdminRoute() {
   if (!isAdminSession()) {
@@ -201,6 +259,23 @@ function AdminRoute() {
   }
 
   return <AdminRuntime />;
+}
+
+function SpecialistRoute() {
+  if (!isSpecialistSession()) {
+    return <Navigate to="/LogIn" replace />;
+  }
+
+  return (
+    <Layout>
+      <RoutedPage
+        title="Specialist Profile"
+        modulePaths={PROFILE_MODULES}
+        component={SpecialistProfile}
+        clearOverflow
+      />
+    </Layout>
+  );
 }
 
 function AdminRuntime() {
@@ -215,6 +290,16 @@ function AdminRuntime() {
       <AdminLayout />
     </Layout>
   );
+}
+
+function AnalyticsRuntime() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageVisit(`${location.pathname}${location.search}`);
+  }, [location.pathname, location.search]);
+
+  return null;
 }
 
 
@@ -333,13 +418,21 @@ function HomePage() {
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <AnalyticsRuntime />
+      <Suspense fallback={null}>
+        <Routes>
         <Route
           path="/"
           element={
             <Layout>
               {/* If admin: send to /admin to avoid profile/admin route conflicts */}
-              {isAdminSession() ? <Navigate to="/admin" replace /> : <HomePage />}
+              {isAdminSession() ? (
+                <Navigate to="/admin" replace />
+              ) : isSpecialistSession() ? (
+                <Navigate to="/specialist-profile" replace />
+              ) : (
+                <HomePage />
+              )}
             </Layout>
           }
         />
@@ -393,7 +486,7 @@ function App() {
             <Layout>
               <RoutedPage
                 title="Service Details"
-                modulePaths={LAB_MODULES}
+                modulePaths={UNIT_MODULES}
                 component={UnitPage}
                 clearOverflow
               />
@@ -427,12 +520,25 @@ function App() {
           }
         />
         <Route
+          path="/project/:slug"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Article"
+                modulePaths={PROJECT_MODULES}
+                component={ProjectArticlePage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
           path="/work/:slug"
           element={
             <Layout>
               <RoutedPage
                 title="Service"
-                modulePaths={PROJECT_MODULES}
+                modulePaths={PROJECT_DETAIL_MODULES}
                 component={WorkPages}
                 clearOverflow
               />
@@ -469,15 +575,20 @@ function App() {
           path="/profile"
           element={
             <Layout>
-              <RoutedPage
-                title="Profile"
-                modulePaths={PROFILE_MODULES}
-                component={ProfilePage}
-                clearOverflow
-              />
+              {isSpecialistSession() ? (
+                <Navigate to="/specialist-profile" replace />
+              ) : (
+                <RoutedPage
+                  title="Profile"
+                  modulePaths={PROFILE_MODULES}
+                  component={ProfilePage}
+                  clearOverflow
+                />
+              )}
             </Layout>
           }
         />
+        <Route path="/specialist-profile" element={<SpecialistRoute />} />
         <Route path="/admin" element={<AdminRoute />}>
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
@@ -513,7 +624,8 @@ function App() {
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>{" "}
+        </Routes>{" "}
+      </Suspense>
     </BrowserRouter>
   );
 }

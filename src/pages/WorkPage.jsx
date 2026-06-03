@@ -1,17 +1,38 @@
 import Footer from "../components/Footer";
-import { useState } from "react";
-import useDebounce from "../hooks/useDebounce";
+import { useEffect, useState } from "react";
+import { CONTENT_TYPES, contentItemsAPI } from "../api/contentItems";
 import { workServices } from "../data/workServices";
 
 export default function WorkPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedQuery = useDebounce(searchQuery, 250);
-  const filteredServices = workServices.filter((s) =>
-    s.name.toLowerCase().includes(debouncedQuery.toLowerCase())
-  );
+  const [galleryItems, setGalleryItems] = useState(() => getFallbackGalleryItems());
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadGallery() {
+      try {
+        const data = await contentItemsAPI.getPublic(CONTENT_TYPES.gallery);
+        const activeItems = data.filter((item) => item.isActive && item.imageUrl);
+
+        if (isMounted && activeItems.length > 0) {
+          setGalleryItems(activeItems);
+        }
+      } catch (error) {
+        console.warn("Gallery DB content unavailable, using fallback images.", error);
+      }
+    }
+
+    loadGallery();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <>
       <section className="work-hero">
+      <canvas className="work-hero-shader" aria-hidden="true" />
       <h1
         data-animate-variant="diffuse"
         data-animate-on-scroll="false"
@@ -44,35 +65,34 @@ export default function WorkPage() {
 
     <section className="work-items">
       <div className="container">
-        <div className="work-search">
-          <input
-            type="text"
-            placeholder="Поиск по названию"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        {filteredServices.map((service, index) => (
+        {galleryItems.map((item, index) => (
           <div
             className="work-item-row"
             id={`work-item-row-${index + 1}`}
-            key={service.slug}
+            key={item.id || item.slug || `${item.title}-${index}`}
           >
-            <a href={`/work/${service.slug}`}>
+            <div className="work-item-frame">
               <div className="work-item">
-                <img src={service.image} alt={service.name} />
+                <img
+                  src={item.imageUrl}
+                  alt={item.title}
+                  loading="lazy"
+                  decoding="async"
+                  width="736"
+                  height="920"
+                />
                 <div className="work-item-info">
-                  <p>{service.name}</p>
-                  <p>{service.code}</p>
+                  <p>{item.title}</p>
+                  <p>{item.subtitle}</p>
                 </div>
               </div>
-            </a>
+            </div>
           </div>
         ))}
       </div>
     </section>
 
-    <Footer />
+    <Footer className="work-footer" />
 
     <svg
       viewBox="0 0 0 0"
@@ -100,4 +120,17 @@ export default function WorkPage() {
 
     </>
   );
+}
+
+
+function getFallbackGalleryItems() {
+  return workServices.map((service, index) => ({
+    id: service.slug,
+    title: service.name,
+    slug: service.slug,
+    subtitle: service.code,
+    imageUrl: service.image,
+    sortOrder: index,
+    isActive: true,
+  }));
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   servicesAPI,
   serviceCategoriesAPI,
@@ -8,6 +8,8 @@ import {
 import { FALLBACK_IMAGE } from "../../api/catalog";
 import { toCreateServiceDto } from "../../api/dtoMappers";
 import { useAdminText } from "./adminI18n";
+
+const MAX_SERVICE_IMAGES = 7;
 
 const EMPTY_FORM = {
   nameOfService: "",
@@ -30,8 +32,14 @@ function normalizeSpecialist(raw) {
   };
 }
 
-function readImageUrlFromService(serviceImagesByServiceId, serviceId) {
-  return serviceImagesByServiceId[serviceId]?.imageUrl || "";
+function readImageUrlsFromService(serviceImagesByServiceId, serviceId) {
+  return (serviceImagesByServiceId[serviceId] || [])
+    .map((image) => image.imageUrl)
+    .filter(Boolean);
+}
+
+function readPrimaryImageUrlFromService(serviceImagesByServiceId, serviceId) {
+  return readImageUrlsFromService(serviceImagesByServiceId, serviceId)[0] || "";
 }
 
 function getFileNameFromUrl(url) {
@@ -73,9 +81,8 @@ export default function ServicesManager() {
 
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [selectedSpecialistId, setSelectedSpecialistId] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState([""]);
   const [isSpecialistDropdownOpen, setIsSpecialistDropdownOpen] = useState(false);
-  const imageInputRef = useRef(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -100,8 +107,11 @@ export default function ServicesManager() {
 
       const imagesMap = imagesList.reduce((acc, image) => {
         const serviceId = image.serviceId;
-        if (serviceId && !acc[serviceId]) {
-          acc[serviceId] = image;
+        if (serviceId) {
+          if (!acc[serviceId]) {
+            acc[serviceId] = [];
+          }
+          acc[serviceId].push(image);
         }
         return acc;
       }, {});
@@ -140,8 +150,25 @@ export default function ServicesManager() {
     }));
   };
 
-  const handleImageUrlChange = (e) => {
-    setImageUrl(e.target.value);
+  const handleImageUrlChange = (index, value) => {
+    setImageUrls((prev) =>
+      prev.map((imageUrl, imageIndex) =>
+        imageIndex === index ? value : imageUrl,
+      ),
+    );
+  };
+
+  const addImageUrlField = () => {
+    setImageUrls((prev) =>
+      prev.length >= MAX_SERVICE_IMAGES ? prev : [...prev, ""],
+    );
+  };
+
+  const removeImageUrlField = (index) => {
+    setImageUrls((prev) => {
+      const next = prev.filter((_, imageIndex) => imageIndex !== index);
+      return next.length > 0 ? next : [""];
+    });
   };
 
   const validateForm = () => {
@@ -168,26 +195,34 @@ export default function ServicesManager() {
     return null;
   };
 
-  const upsertServiceImage = async (service) => {
-    const nextImageUrl = imageUrl.trim();
-    const existingImage = serviceImagesByServiceId[service.id];
-    if (!nextImageUrl) {
-      if (existingImage?.id) {
-        await serviceImagesAPI.delete(existingImage.id);
-      }
-      return;
-    }
-    const payload = buildImagePayload({
-      imageUrl: nextImageUrl,
-      serviceName: service.nameOfService,
-      serviceId: service.id,
-      fileName: existingImage?.fileName,
-    });
-    if (existingImage?.id) {
-      await serviceImagesAPI.update(existingImage.id, payload);
-      return;
-    }
-    await serviceImagesAPI.create(payload);
+  const syncServiceImages = async (service) => {
+    const nextImageUrls = imageUrls
+      .map((url) => url.trim())
+      .filter(Boolean)
+      .slice(0, MAX_SERVICE_IMAGES);
+    const existingImages = serviceImagesByServiceId[service.id] || [];
+
+    await Promise.all(
+      existingImages.slice(nextImageUrls.length).map((image) =>
+        image.id ? serviceImagesAPI.delete(image.id).catch(() => null) : null,
+      ),
+    );
+
+    await Promise.all(
+      nextImageUrls.map((nextImageUrl, index) => {
+        const existingImage = existingImages[index];
+        const payload = buildImagePayload({
+          imageUrl: nextImageUrl,
+          serviceName: service.nameOfService,
+          serviceId: service.id,
+          fileName: existingImage?.fileName,
+        });
+
+        return existingImage?.id
+          ? serviceImagesAPI.update(existingImage.id, payload)
+          : serviceImagesAPI.create(payload);
+      }),
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -207,7 +242,7 @@ export default function ServicesManager() {
         savedService = await servicesAPI.create(formData);
       }
       if (savedService?.id) {
-        await upsertServiceImage(savedService);
+        await syncServiceImages(savedService);
       }
       await loadData();
       closeModal();
@@ -227,10 +262,12 @@ export default function ServicesManager() {
     if (!window.confirm("Удалить эту услугу?")) return;
     setError("");
     try {
-      const image = serviceImagesByServiceId[service.id];
-      if (image?.id) {
-        await serviceImagesAPI.delete(image.id).catch(() => null);
-      }
+      const images = serviceImagesByServiceId[service.id] || [];
+      await Promise.all(
+        images.map((image) =>
+          image?.id ? serviceImagesAPI.delete(image.id).catch(() => null) : null,
+        ),
+      );
       await servicesAPI.delete(service.id);
       setServices((prev) => prev.filter((item) => item.id !== service.id));
     } catch (err) {
@@ -254,7 +291,8 @@ export default function ServicesManager() {
         (specialist) => specialist.fullName === service.nameOfMaster,
       );
       setSelectedSpecialistId(matchedSpecialist?.id || "");
-      setImageUrl(readImageUrlFromService(serviceImagesByServiceId, service.id));
+      const urls = readImageUrlsFromService(serviceImagesByServiceId, service.id);
+      setImageUrls(urls.length > 0 ? urls.slice(0, MAX_SERVICE_IMAGES) : [""]);
     } else {
       setEditingService(null);
       setFormData({
@@ -262,9 +300,8 @@ export default function ServicesManager() {
         categoryId: categories[0]?.id || "",
       });
       setSelectedSpecialistId("");
-      setImageUrl("");
+      setImageUrls([""]);
     }
-    if (imageInputRef.current) imageInputRef.current.value = "";
     setIsSpecialistDropdownOpen(false);
     setIsModalOpen(true);
   };
@@ -273,9 +310,8 @@ export default function ServicesManager() {
     setIsModalOpen(false);
     setEditingService(null);
     setSelectedSpecialistId("");
-    setImageUrl("");
+    setImageUrls([""]);
     setIsSpecialistDropdownOpen(false);
-    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const getCategoryName = (categoryId) =>
@@ -526,22 +562,54 @@ export default function ServicesManager() {
                 </div>
 
                 <div className="services-field">
-                  <label className="services-label" htmlFor="imageUrl">{t.services.image}</label>
-                  <input
-                    id="imageUrl"
-                    ref={imageInputRef}
-                    type="text"
-                    className="services-input"
-                    value={imageUrl}
-                    onChange={handleImageUrlChange}
-                    placeholder="Вставьте ссылку на изображение"
-                  />
+                  <div className="services-images-head">
+                    <label className="services-label" htmlFor="imageUrl-0">{t.services.image}</label>
+                    <span className="services-images-count">
+                      {imageUrls.filter((url) => url.trim()).length}/{MAX_SERVICE_IMAGES}
+                    </span>
+                  </div>
+                  <div className="services-images-list">
+                    {imageUrls.map((currentImageUrl, index) => (
+                      <div className="services-image-row" key={index}>
+                        <input
+                          id={`imageUrl-${index}`}
+                          type="text"
+                          className="services-input"
+                          value={currentImageUrl}
+                          onChange={(event) =>
+                            handleImageUrlChange(index, event.target.value)
+                          }
+                          placeholder={`Ссылка на изображение ${index + 1}`}
+                        />
+                        <button
+                          type="button"
+                          className="services-image-remove"
+                          onClick={() => removeImageUrlField(index)}
+                          disabled={imageUrls.length === 1}
+                        >
+                          Удалить
+                        </button>
+                        {currentImageUrl.trim() && (
+                          <div className="services-image-preview">
+                            <img
+                              src={currentImageUrl}
+                              alt={`Превью услуги ${index + 1}`}
+                              onError={(e)=>{e.currentTarget.src = FALLBACK_IMAGE}}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="services-image-add"
+                    onClick={addImageUrlField}
+                    disabled={imageUrls.length >= MAX_SERVICE_IMAGES}
+                  >
+                    Добавить изображение
+                  </button>
                   <p className="services-hint-small">{t.services.publicLink}</p>
-                  {imageUrl && (
-                    <div className="services-image-preview">
-                      <img src={imageUrl} alt="Превью услуги" onError={(e)=>{e.currentTarget.src = FALLBACK_IMAGE}} />
-                    </div>
-                  )}
                 </div>
 
               </form>
@@ -581,7 +649,7 @@ export default function ServicesManager() {
                 <tr key={service.id}>
                   <td>
                     <div className="services-thumb">
-                      <img src={readImageUrlFromService(serviceImagesByServiceId, service.id) || FALLBACK_IMAGE} alt={service.nameOfService} />
+                      <img src={readPrimaryImageUrlFromService(serviceImagesByServiceId, service.id) || FALLBACK_IMAGE} alt={service.nameOfService} />
                     </div>
                   </td>
                   <td>{service.nameOfService}</td>

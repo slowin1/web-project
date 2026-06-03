@@ -34,16 +34,31 @@ let menuLinkAnimations = [];
 
 let atmosphereScene, atmosphereCamera, atmosphereRenderer;
 let atmosphereMaterial, atmosphereMesh;
+let atmosphereFrame = null;
+let joystickFrame = null;
+let resizeHandler = null;
+let themeObserver = null;
+let menuToggleButton = null;
+let closeButton = null;
 
 // initialization
 document.addEventListener("DOMContentLoaded", () => {
+  cleanupMenuRuntime();
+
   responsiveConfig = getResponsiveConfig();
 
   const menu = document.querySelector(".circular-menu");
-  const joystick = document.querySelector(".joystick");
+  let joystick = document.querySelector(".joystick");
   const menuOverlayNav = document.querySelector(".menu-overlay-nav");
   const menuOverlayFooter = document.querySelector(".menu-overlay-footer");
 
+  if (!menu || !joystick || !menuOverlayNav || !menuOverlayFooter) return;
+
+  const freshJoystick = joystick.cloneNode(true);
+  joystick.replaceWith(freshJoystick);
+  joystick = freshJoystick;
+
+  menu.querySelectorAll(".menu-segment").forEach((segment) => segment.remove());
   menu.style.width = `${responsiveConfig.menuSize}px`;
   menu.style.height = `${responsiveConfig.menuSize}px`;
 
@@ -73,10 +88,10 @@ document.addEventListener("DOMContentLoaded", () => {
     menu.appendChild(segment);
   });
 
-  document
-    .querySelector(".menu-toggle-btn")
-    .addEventListener("click", toggleMenu);
-  document.querySelector(".close-btn").addEventListener("click", toggleMenu);
+  menuToggleButton = document.querySelector(".menu-toggle-btn");
+  closeButton = document.querySelector(".close-btn");
+  menuToggleButton?.addEventListener("click", toggleMenu);
+  closeButton?.addEventListener("click", toggleMenu);
 
   resetJoystick = initJoystick();
   if (resetJoystick) resetJoystick();
@@ -85,10 +100,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.toggleMenu = toggleMenu;
 
-  window.addEventListener("resize", () => {
+  resizeHandler = () => {
     resizeAtmosphere();
     resizeMenu();
-  });
+  };
+  window.addEventListener("resize", resizeHandler);
 });
 
 // utility - check if link points to current page
@@ -177,6 +193,7 @@ function hexToRgb(hex) {
 
 function initAtmosphere() {
   const canvas = document.getElementById("menu-canvas");
+  if (!canvas) return;
 
   atmosphereScene = new THREE.Scene();
   atmosphereCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -214,13 +231,15 @@ function initAtmosphere() {
   atmosphereScene.add(atmosphereMesh);
 
   resizeAtmosphere();
-  animateAtmosphere();
+  renderAtmosphereFrame();
 
   // Listen for theme changes
   setupThemeListener();
 }
 
 function resizeAtmosphere() {
+  if (!atmosphereRenderer || !atmosphereMaterial) return;
+
   const width = window.innerWidth;
   const height = window.innerHeight;
 
@@ -229,14 +248,25 @@ function resizeAtmosphere() {
 }
 
 function animateAtmosphere() {
+  if (!atmosphereRenderer || !atmosphereMaterial) return;
+  if (!isOpen) {
+    atmosphereFrame = null;
+    return;
+  }
+
   atmosphereMaterial.uniforms.iTime.value += 0.016;
+  renderAtmosphereFrame();
+  atmosphereFrame = requestAnimationFrame(animateAtmosphere);
+}
+
+function renderAtmosphereFrame() {
+  if (!atmosphereRenderer || !atmosphereMaterial) return;
   atmosphereRenderer.render(atmosphereScene, atmosphereCamera);
-  requestAnimationFrame(animateAtmosphere);
 }
 
 // theme change listener
 function setupThemeListener() {
-  const observer = new MutationObserver((mutations) => {
+  themeObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === "attributes" && mutation.attributeName === "class") {
         const isDark = document.documentElement.classList.contains("dark");
@@ -256,7 +286,7 @@ function setupThemeListener() {
     });
   });
 
-  observer.observe(document.documentElement, { attributes: true });
+  themeObserver.observe(document.documentElement, { attributes: true });
 }
 
 // segment geometry - calculates SVG path for pie slice segments
@@ -346,9 +376,11 @@ function updateSegment(segment, index, total) {
 }
 
 function resizeMenu() {
+  const menu = document.querySelector(".circular-menu");
+  if (!menu) return;
+
   responsiveConfig = getResponsiveConfig();
 
-  const menu = document.querySelector(".circular-menu");
   menu.style.width = `${responsiveConfig.menuSize}px`;
   menu.style.height = `${responsiveConfig.menuSize}px`;
 
@@ -373,6 +405,7 @@ function toggleMenu() {
   if (!isOpen) {
     isOpen = true;
     new Audio("/sfx/menu-open.mp3").play();
+    if (!atmosphereFrame) animateAtmosphere();
 
     if (resetJoystick) resetJoystick();
 
@@ -481,6 +514,8 @@ function toggleMenu() {
 // joystick - drag control for segment selection
 function initJoystick() {
   const joystick = document.querySelector(".joystick");
+  if (!joystick) return null;
+
   let isDragging = false;
   let currentX = 0;
   let currentY = 0;
@@ -526,7 +561,7 @@ function initJoystick() {
       }
     }
 
-    requestAnimationFrame(animate);
+    joystickFrame = requestAnimationFrame(animate);
   }
 
   function startDrag(e) {
@@ -590,4 +625,37 @@ function initJoystick() {
     targetY = 0;
     gsap.set(joystick, { x: 0, y: 0 });
   };
+}
+
+function cleanupMenuRuntime() {
+  if (atmosphereFrame) cancelAnimationFrame(atmosphereFrame);
+  if (joystickFrame) cancelAnimationFrame(joystickFrame);
+  if (resizeHandler) window.removeEventListener("resize", resizeHandler);
+  if (themeObserver) themeObserver.disconnect();
+  menuToggleButton?.removeEventListener("click", toggleMenu);
+  closeButton?.removeEventListener("click", toggleMenu);
+
+  menuLinkAnimations.forEach((anim) => anim.kill());
+  menuLinkSplits.forEach((split) => split?.revert?.());
+  menuLinkAnimations = [];
+  menuLinkSplits = [];
+
+  if (atmosphereRenderer) atmosphereRenderer.dispose();
+  atmosphereMesh?.geometry?.dispose?.();
+  atmosphereMaterial?.dispose?.();
+
+  atmosphereScene = null;
+  atmosphereCamera = null;
+  atmosphereRenderer = null;
+  atmosphereMaterial = null;
+  atmosphereMesh = null;
+  atmosphereFrame = null;
+  joystickFrame = null;
+  resizeHandler = null;
+  themeObserver = null;
+  menuToggleButton = null;
+  closeButton = null;
+  resetJoystick = null;
+  isOpen = false;
+  isMenuAnimating = false;
 }

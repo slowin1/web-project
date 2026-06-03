@@ -17,17 +17,21 @@ let currentIconIndex = 1;
 let lastCenteredRow = null;
 let gapScrollTriggers = [];
 let isMobile = window.innerWidth < CONFIG.mobileBreakpoint;
+let clockInterval = null;
+let centerRowScrollHandler = null;
 
 // initialization
 document.addEventListener("DOMContentLoaded", () => {
   const contactVisual = document.querySelector(".contact-visual");
   const contactVisualIcon = document.querySelector(".contact-visual-icon img");
   const contactInfo = document.querySelector(".contact-info");
+  if (!contactVisual || !contactVisualIcon || !contactInfo) return;
 
   updateClocks();
-  setInterval(updateClocks, 1000);
+  if (clockInterval) clearInterval(clockInterval);
+  clockInterval = setInterval(updateClocks, 1000);
 
-  createClones(contactInfo);
+  rebuildContactRows(contactInfo, contactVisual, contactVisualIcon);
 
   waitForLenis(() => {
     initGapAnimations(contactVisual);
@@ -35,6 +39,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   window.addEventListener("resize", () => handleResize(contactVisual));
+  window.addEventListener("contact:rows-updated", () => {
+    window.requestAnimationFrame(() => {
+      rebuildContactRows(contactInfo, contactVisual, contactVisualIcon);
+    });
+  });
 });
 
 // clock - updates all contact clocks with EST time
@@ -57,9 +66,37 @@ function updateClocks() {
 
 // clone contact info rows for infinite scroll
 function createClones(contactInfo) {
+  if (!contactInfo) return;
+  const sourceRows = Array.from(
+    contactInfo.querySelectorAll(".contact-info-row[data-contact-source='true']"),
+  );
+
   for (let i = 0; i < CONFIG.cloneCount; i++) {
-    const clone = contactInfo.cloneNode(true);
+    const clone = contactInfo.cloneNode(false);
+    clone.dataset.contactClone = "true";
+    sourceRows.forEach((row) => {
+      clone.appendChild(row.cloneNode(true));
+    });
     contactInfo.parentElement.appendChild(clone);
+  }
+}
+
+function removeClones(contactInfo) {
+  contactInfo?.parentElement
+    ?.querySelectorAll(".contact-info[data-contact-clone='true']")
+    .forEach((clone) => clone.remove());
+}
+
+function rebuildContactRows(contactInfo, contactVisual, contactVisualIcon) {
+  removeClones(contactInfo);
+  createClones(contactInfo);
+  updateClocks();
+  lastCenteredRow = null;
+
+  if (window.lenis) {
+    initGapAnimations(contactVisual);
+    trackCenterRow(contactVisualIcon);
+    ScrollTrigger.refresh();
   }
 }
 
@@ -70,7 +107,13 @@ function changeIcon(contactVisualIcon) {
 }
 
 function trackCenterRow(contactVisualIcon) {
-  window.lenis.on("scroll", () => {
+  if (!window.lenis || !contactVisualIcon) return;
+
+  if (centerRowScrollHandler && typeof window.lenis.off === "function") {
+    window.lenis.off("scroll", centerRowScrollHandler);
+  }
+
+  centerRowScrollHandler = () => {
     const viewportCenter = window.innerHeight / 2;
     const rows = document.querySelectorAll(".contact-info-row");
 
@@ -92,7 +135,9 @@ function trackCenterRow(contactVisualIcon) {
       lastCenteredRow = closestRow;
       changeIcon(contactVisualIcon);
     }
-  });
+  };
+
+  window.lenis.on("scroll", centerRowScrollHandler);
 }
 
 // gap animations - expand/collapse rows as they pass visual center
@@ -115,7 +160,7 @@ function killGapAnimations() {
 function initGapAnimations(contactVisual) {
   killGapAnimations();
 
-  if (isMobile) return;
+  if (isMobile || !contactVisual) return;
 
   const visualCenter = getVisualCenter(contactVisual);
 

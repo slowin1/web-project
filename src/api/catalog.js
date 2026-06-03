@@ -23,7 +23,8 @@ export function slugify(value) {
 
 export function mapApiServiceToUi(service, imageByServiceId = {}) {
   const api = normalizeService(service);
-  const image = imageByServiceId[api.id] || FALLBACK_IMAGE;
+  const images = imageByServiceId[api.id] || [];
+  const image = images[0] || FALLBACK_IMAGE;
 
   return {
     id: api.id,
@@ -34,6 +35,7 @@ export function mapApiServiceToUi(service, imageByServiceId = {}) {
     duration: `${api.durationOfService || 0} мин`,
     category: api.categoryId,
     image,
+    images: images.length > 0 ? images : [FALLBACK_IMAGE],
     minimap: image,
     description:
       api.descriptionOfService || "Описание пока не добавлено.",
@@ -78,8 +80,13 @@ export async function fetchCatalogBundle() {
 
   const imageByServiceId = imagesList.reduce((acc, image) => {
     const sid = image.serviceId;
-    if (sid && !acc[sid]) {
-      acc[sid] = image.imageUrl;
+    if (sid) {
+      if (!acc[sid]) {
+        acc[sid] = [];
+      }
+      if (image.imageUrl) {
+        acc[sid].push(image.imageUrl);
+      }
     }
     return acc;
   }, {});

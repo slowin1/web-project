@@ -3,23 +3,29 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const scrollTriggerConfig = {
-  trigger: ".lab-hero",
-  start: "top top",
-  end: "150% top",
-  scrub: true,
-};
+const labHero = document.querySelector(".lab-hero");
+const revealer = document.querySelector(".lab-about-revealer");
+const overlay = document.querySelector(".lab-hero-overlay");
 
-// revealer - clip path animates to reveal about section
-gsap.to(".lab-about-revealer", {
-  clipPath: "polygon(0% 100%, 100% 100%, 100% -25%, 0% 0%)",
-  ease: "none",
-  scrollTrigger: scrollTriggerConfig,
-});
+if (labHero && revealer && overlay) {
+  const scrollTriggerConfig = {
+    trigger: labHero,
+    start: "top top",
+    end: "150% top",
+    scrub: true,
+  };
 
-// overlay - fades in as hero scrolls
-gsap.to(".lab-hero-overlay", {
-  opacity: 1,
-  ease: "none",
-  scrollTrigger: scrollTriggerConfig,
-});
+  // revealer - clip path animates to reveal about section
+  gsap.to(revealer, {
+    clipPath: "polygon(0% 100%, 100% 100%, 100% -25%, 0% 0%)",
+    ease: "none",
+    scrollTrigger: scrollTriggerConfig,
+  });
+
+  // overlay - fades in as hero scrolls
+  gsap.to(overlay, {
+    opacity: 1,
+    ease: "none",
+    scrollTrigger: scrollTriggerConfig,
+  });
+}

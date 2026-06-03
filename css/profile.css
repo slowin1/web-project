@@ -1,881 +1,583 @@
-@keyframes gradient-shift {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-@keyframes fade-in-up {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes pulse-glow {
-    0%,
-    100% {
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-    }
-    50% {
-        box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
-    }
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -200% 0;
-    }
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-/* ===== Main Page ===== */
 .profile-page {
     min-height: 100vh;
-    padding: 8rem 2rem 4rem;
-    background: linear-gradient(-45deg, #e8e8e8, #7a7f8a, #2a3441, #03034a);
-    background-size: 400% 400%;
-    animation: gradient-shift 15s ease infinite;
+    padding: 7.5rem 1.25rem 4rem;
+    background:
+        linear-gradient(180deg, rgba(246, 247, 241, 0.94), rgba(235, 238, 232, 0.96)),
+        radial-gradient(circle at 20% 0%, rgba(117, 141, 118, 0.16), transparent 32%),
+        radial-gradient(circle at 90% 10%, rgba(38, 77, 92, 0.14), transparent 30%);
+    color: #17201b;
 }
 
 html.dark .profile-page {
-    background: linear-gradient(-45deg, #0a0a0a, #1a1a2e, #16213e, #0a0a0a);
-    background-size: 400% 400%;
+    background:
+        linear-gradient(180deg, rgba(16, 18, 17, 0.98), rgba(23, 27, 25, 0.98)),
+        radial-gradient(circle at 18% 0%, rgba(122, 147, 124, 0.18), transparent 32%),
+        radial-gradient(circle at 90% 8%, rgba(67, 111, 126, 0.16), transparent 30%);
+    color: #eff3ec;
 }
 
-.profile-container {
-    max-width: 900px;
+.profile-shell {
+    width: min(1120px, 100%);
     margin: 0 auto;
-    animation: fade-in-up 0.6s ease-out;
 }
 
-.profile-container > h1 {
-    text-align: center;
-    margin-bottom: 3rem;
-    font-size: 4rem;
-    letter-spacing: -0.2rem;
-    font-family: var(--type-1);
-    text-transform: uppercase;
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+.profile-hero,
+.profile-panel,
+.profile-stats,
+.profile-danger-zone,
+.profile-guest,
+.profile-state {
+    border: 1px solid rgba(23, 32, 27, 0.12);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 18px 60px rgba(28, 38, 32, 0.08);
+    backdrop-filter: blur(18px);
 }
 
-html.dark .profile-container > h1 {
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
+html.dark .profile-hero,
+html.dark .profile-panel,
+html.dark .profile-stats,
+html.dark .profile-danger-zone,
+html.dark .profile-guest,
+html.dark .profile-state {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(26, 30, 28, 0.72);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.28);
 }
 
-/* ===== Messages ===== */
-.error-message,
-.success-message {
-    padding: 1rem 1.25rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    font-family: var(--type-3);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    animation: fade-in-up 0.4s ease-out;
-    backdrop-filter: blur(10px);
-}
-
-.error-message {
-    background: linear-gradient(
-        135deg,
-        rgba(244, 67, 54, 0.15),
-        rgba(244, 67, 54, 0.05)
-    );
-    border: 1px solid rgba(244, 67, 54, 0.3);
-    color: #f44336;
-    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.15);
-}
-
-.success-message {
-    background: linear-gradient(
-        135deg,
-        rgba(76, 175, 80, 0.15),
-        rgba(76, 175, 80, 0.05)
-    );
-    border: 1px solid rgba(76, 175, 80, 0.3);
-    color: #4caf50;
-    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.15);
-}
-
-/* ===== Profile Sections ===== */
-.profile-section {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.12),
-        rgba(255, 255, 255, 0.03)
-    );
-    backdrop-filter: blur(25px);
-    border-radius: 20px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.profile-section::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.08),
-        transparent
-    );
-    transition: left 0.6s ease;
-}
-
-.profile-section:hover::before {
-    left: 100%;
-}
-
-.profile-section:hover {
-    border-color: rgba(255, 255, 255, 0.28);
-    box-shadow:
-        0 12px 48px rgba(0, 0, 0, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    transform: translateY(-3px);
-}
-
-.profile-section h2 {
-    margin: 0 0 2rem 0;
-    font-size: 1.75rem;
-    font-family: var(--type-1);
-    text-transform: uppercase;
-    letter-spacing: -0.08rem;
-    position: relative;
-    padding-bottom: 0.75rem;
-}
-
-.profile-section h2::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.6), transparent);
-    border-radius: 2px;
-}
-
-/* ===== Profile Info Display ===== */
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.5rem;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.06),
-        rgba(255, 255, 255, 0.02)
-    );
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-}
-
-.info-item:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.03)
-    );
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.info-label {
-    font-family: var(--type-3);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    opacity: 0.7;
-    letter-spacing: 0.05rem;
-}
-
-.info-value {
-    font-family: var(--type-2);
-    font-size: 1.15rem;
-    font-weight: 500;
-    padding: 0.5rem 1.25rem;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.12),
-        rgba(255, 255, 255, 0.04)
-    );
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    min-width: 200px;
-    text-align: right;
-}
-
-/* ===== Forms ===== */
-.profile-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
-.form-group label {
-    font-family: var(--type-3);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    opacity: 0.8;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 1rem 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.06),
-        rgba(255, 255, 255, 0.02)
-    );
-    backdrop-filter: blur(10px);
-    color: var(--fg);
-    font-size: 1rem;
-    font-family: var(--type-2);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.form-group input::placeholder {
-    color: var(--fg);
-    opacity: 0.4;
-}
-
-.form-group input:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.08),
-        rgba(255, 255, 255, 0.03)
-    );
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.5);
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.12),
-        rgba(255, 255, 255, 0.04)
-    );
-    box-shadow:
-        0 0 30px rgba(255, 255, 255, 0.1),
-        inset 0 0 20px rgba(255, 255, 255, 0.05);
-    transform: scale(1.01);
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 0.5rem;
-}
-
-/* ===== Buttons ===== */
-.btn-edit,
-.btn-secondary,
-.btn-logout,
-.btn-delete,
-.btn-link {
-    padding: 0.875rem 1.75rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-family: var(--type-3);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    border: none;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Edit / Change Password buttons */
-.btn-edit {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.15),
-        rgba(255, 255, 255, 0.05)
-    );
-    color: var(--fg);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.08);
-    margin-top: 1.5rem;
-    width: 100%;
-}
-
-.btn-edit:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.25),
-        rgba(255, 255, 255, 0.1)
-    );
-    border-color: rgba(255, 255, 255, 0.35);
-    box-shadow: 0 6px 25px rgba(255, 255, 255, 0.12);
-    transform: translateY(-2px);
-}
-
-/* Cancel button */
-.btn-secondary {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.08),
-        rgba(255, 255, 255, 0.02)
-    );
-    color: var(--fg);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    flex: 1;
-}
-
-.btn-secondary:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.15),
-        rgba(255, 255, 255, 0.05)
-    );
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
-}
-
-/* Submit buttons inside forms */
-.profile-form button[type="submit"] {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.2),
-        rgba(255, 255, 255, 0.08)
-    );
-    color: var(--fg);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-family: var(--type-3);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
-    flex: 1;
-}
-
-.profile-form button[type="submit"]:hover:not(:disabled) {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.3),
-        rgba(255, 255, 255, 0.12)
-    );
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
-    transform: translateY(-3px);
-}
-
-.profile-form button[type="submit"]:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Logout button */
-.btn-logout {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 152, 0, 0.2),
-        rgba(255, 152, 0, 0.08)
-    );
-    color: #ff9800;
-    border: 1px solid rgba(255, 152, 0, 0.3);
-    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.1);
-    flex: 1;
-}
-
-.btn-logout:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 152, 0, 0.3),
-        rgba(255, 152, 0, 0.15)
-    );
-    border-color: rgba(255, 152, 0, 0.5);
-    box-shadow: 0 6px 25px rgba(255, 152, 0, 0.2);
-    transform: translateY(-2px);
-}
-
-/* Delete account button */
-.btn-delete {
-    background: linear-gradient(
-        135deg,
-        rgba(244, 67, 54, 0.2),
-        rgba(244, 67, 54, 0.08)
-    );
-    color: #f44336;
-    border: 1px solid rgba(244, 67, 54, 0.3);
-    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.1);
-    flex: 1;
-}
-
-.btn-delete:hover:not(:disabled) {
-    background: linear-gradient(
-        135deg,
-        rgba(244, 67, 54, 0.3),
-        rgba(244, 67, 54, 0.15)
-    );
-    border-color: rgba(244, 67, 54, 0.5);
-    box-shadow: 0 6px 25px rgba(244, 67, 54, 0.2);
-    transform: translateY(-2px);
-}
-
-.btn-delete:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* ===== Account Actions Section ===== */
-.profile-actions {
-    display: flex;
-    gap: 1rem;
-    flex-direction: row;
-}
-
-.profile-actions .btn-logout,
-.profile-actions .btn-delete {
-    flex: 1;
-}
-
-/* ===== Loading State ===== */
-.profile-page .profile-container > p {
-    text-align: center;
-    font-family: var(--type-3);
-    font-size: 1rem;
-    text-transform: uppercase;
-    opacity: 0.7;
-    padding: 4rem 2rem;
-}
-
-/* ===== Bookings Section ===== */
-.bookings-section {
-    animation: fade-in-up 0.6s ease-out 0.2s both;
-}
-
-.bookings-loading {
-    text-align: center;
-    font-family: var(--type-3);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    opacity: 0.6;
-    padding: 2rem;
-}
-
-/* No bookings */
-.no-bookings {
-    text-align: center;
-    padding: 2.5rem 2rem;
-}
-
-.no-bookings-icon {
-    font-size: 3.5rem;
-    display: block;
-    margin-bottom: 1.25rem;
-    filter: grayscale(100%);
-    animation: pulse-glow 3s ease-in-out infinite;
-}
-
-.no-bookings p {
-    font-family: var(--type-3);
-    font-size: 1rem;
-    text-transform: uppercase;
-    opacity: 0.6;
-    margin-bottom: 1.5rem;
-}
-
-.btn-book {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.18),
-        rgba(255, 255, 255, 0.06)
-    );
-    color: var(--fg);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    padding: 0.875rem 2rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-family: var(--type-3);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.08);
-}
-
-.btn-book:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.28),
-        rgba(255, 255, 255, 0.12)
-    );
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 6px 25px rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
-}
-
-/* Bookings list */
-.bookings-list {
-    display: flex;
-    flex-direction: column;
+.profile-hero {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 1.25rem;
-}
-
-.booking-card {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.08),
-        rgba(255, 255, 255, 0.02)
-    );
-    backdrop-filter: blur(20px);
-    border-radius: 16px;
-    padding: 1.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.booking-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    border-radius: 4px 0 0 4px;
-}
-
-.booking-card.confirmed::before {
-    background: linear-gradient(180deg, #4caf50, #66bb6a);
-}
-
-.booking-card.pending::before {
-    background: linear-gradient(180deg, #ff9800, #ffa726);
-}
-
-.booking-card.cancelled::before {
-    background: linear-gradient(180deg, #f44336, #ef5350);
-}
-
-.booking-card.completed::before {
-    background: linear-gradient(180deg, #2196f3, #42a5f5);
-}
-
-.booking-card:hover {
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    transform: translateY(-2px);
-}
-
-.booking-card-glow {
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.05) 0%,
-        transparent 70%
-    );
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.booking-card:hover .booking-card-glow {
-    opacity: 1;
-}
-
-/* Booking header */
-.booking-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
-    gap: 1rem;
-}
-
-.booking-service-info {
-    display: flex;
     align-items: center;
-    gap: 1rem;
-    flex: 1;
+    padding: 1.35rem;
+    border-radius: 8px;
+}
+
+.profile-avatar {
+    display: grid;
+    place-items: center;
+    width: 5.5rem;
+    height: 5.5rem;
+    border-radius: 8px;
+    background: #24392d;
+    color: #f7f4e8;
+    font-family: var(--type-1);
+    font-size: 2.1rem;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+html.dark .profile-avatar {
+    background: #dbe6d7;
+    color: #17201b;
+}
+
+.profile-hero-copy {
     min-width: 0;
 }
 
-.booking-thumb {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    object-fit: cover;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    flex-shrink: 0;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.booking-service-name {
-    font-size: 1.1rem;
-    font-family: var(--type-1);
-    text-transform: uppercase;
-    margin: 0 0 0.3rem 0;
-    letter-spacing: -0.03rem;
-}
-
-.booking-specialist {
+.profile-kicker {
+    margin: 0 0 0.35rem;
     font-family: var(--type-3);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    opacity: 0.6;
-    margin: 0;
-}
-
-/* Status badges */
-.booking-status {
-    padding: 0.4rem 0.875rem;
-    border-radius: 20px;
-    font-family: var(--type-3);
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
+    font-size: 0.72rem;
     letter-spacing: 0.08rem;
-    flex-shrink: 0;
-    backdrop-filter: blur(10px);
+    text-transform: uppercase;
+    color: #617064;
 }
 
-.booking-status.confirmed {
-    background: linear-gradient(
-        135deg,
-        rgba(76, 175, 80, 0.2),
-        rgba(76, 175, 80, 0.08)
-    );
-    color: #4caf50;
-    border: 1px solid rgba(76, 175, 80, 0.3);
+html.dark .profile-kicker {
+    color: #aab6aa;
 }
 
-.booking-status.pending {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 152, 0, 0.2),
-        rgba(255, 152, 0, 0.08)
-    );
-    color: #ff9800;
-    border: 1px solid rgba(255, 152, 0, 0.3);
+.profile-hero h1,
+.profile-guest h1 {
+    margin: 0;
+    font-family: var(--type-1);
+    font-size: clamp(2rem, 5vw, 4.5rem);
+    line-height: 0.95;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
 }
 
-.booking-status.cancelled {
-    background: linear-gradient(
-        135deg,
-        rgba(244, 67, 54, 0.2),
-        rgba(244, 67, 54, 0.08)
-    );
-    color: #f44336;
-    border: 1px solid rgba(244, 67, 54, 0.3);
-    opacity: 0.7;
+.profile-hero-copy > p:last-child,
+.profile-guest p,
+.profile-panel-text,
+.profile-danger-zone p,
+.profile-empty p,
+.profile-booking p {
+    margin: 0;
+    color: #5b665e;
+    font-family: var(--type-3);
+    font-size: 0.9rem;
 }
 
-.booking-status.completed {
-    background: linear-gradient(
-        135deg,
-        rgba(33, 150, 243, 0.2),
-        rgba(33, 150, 243, 0.08)
-    );
-    color: #2196f3;
-    border: 1px solid rgba(33, 150, 243, 0.3);
+html.dark .profile-hero-copy > p:last-child,
+html.dark .profile-guest p,
+html.dark .profile-panel-text,
+html.dark .profile-danger-zone p,
+html.dark .profile-empty p,
+html.dark .profile-booking p {
+    color: #b7beb7;
 }
 
-/* Booking details grid */
-.booking-details {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1.25rem;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.04),
-        rgba(255, 255, 255, 0.01)
-    );
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.booking-detail {
+.profile-hero-actions,
+.profile-form-actions,
+.profile-booking-actions {
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.7rem;
+    align-items: center;
 }
 
-.detail-label {
+.profile-message {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
     font-family: var(--type-3);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    opacity: 0.5;
+    font-size: 0.86rem;
 }
 
-.detail-value {
+.profile-message.is-error {
+    border: 1px solid rgba(184, 62, 51, 0.24);
+    background: rgba(184, 62, 51, 0.1);
+    color: #9d3027;
+}
+
+.profile-message.is-success {
+    border: 1px solid rgba(55, 125, 82, 0.24);
+    background: rgba(55, 125, 82, 0.1);
+    color: #25633c;
+}
+
+html.dark .profile-message.is-error {
+    color: #ffaca4;
+}
+
+html.dark .profile-message.is-success {
+    color: #9be1b2;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1rem;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.profile-stats > div {
+    padding: 1rem 1.15rem;
+    border-right: 1px solid rgba(23, 32, 27, 0.1);
+}
+
+.profile-stats > div:last-child {
+    border-right: 0;
+}
+
+html.dark .profile-stats > div {
+    border-color: rgba(255, 255, 255, 0.09);
+}
+
+.profile-stats span {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-family: var(--type-1);
+    font-size: clamp(1.15rem, 3vw, 1.8rem);
+    line-height: 1;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+
+.profile-stats p {
+    margin: 0;
+    font-family: var(--type-3);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    color: #66716a;
+}
+
+html.dark .profile-stats p {
+    color: #aab4aa;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.profile-panel,
+.profile-danger-zone {
+    border-radius: 8px;
+    padding: 1.25rem;
+}
+
+.profile-panel-header,
+.profile-danger-zone {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.profile-panel h2,
+.profile-danger-zone h2 {
+    margin: 0;
+    font-family: var(--type-1);
+    font-size: 1.65rem;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.profile-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.2rem;
+}
+
+.profile-details > div {
+    min-width: 0;
+    padding: 0.95rem;
+    border: 1px solid rgba(23, 32, 27, 0.1);
+    border-radius: 8px;
+    background: rgba(247, 249, 244, 0.68);
+}
+
+html.dark .profile-details > div {
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.profile-details span,
+.profile-form label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-family: var(--type-3);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: #66716a;
+}
+
+html.dark .profile-details span,
+html.dark .profile-form label {
+    color: #aab4aa;
+}
+
+.profile-details strong {
+    display: block;
     font-family: var(--type-2);
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 500;
+    overflow-wrap: anywhere;
 }
 
-.price-value {
-    color: #4caf50;
-    font-weight: 700;
+.profile-form {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.1rem;
 }
 
-/* Cancel booking button */
-.btn-cancel-booking {
+.profile-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.profile-form-wide {
+    grid-column: 1 / -1;
+}
+
+.profile-form input {
     width: 100%;
-    padding: 0.875rem 1.5rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-family: var(--type-3);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    background: linear-gradient(
-        135deg,
-        rgba(244, 67, 54, 0.15),
-        rgba(244, 67, 54, 0.05)
-    );
-    color: #f44336;
-    border: 1px solid rgba(244, 67, 54, 0.25);
-    box-shadow: 0 2px 10px rgba(244, 67, 54, 0.08);
+    min-height: 2.85rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid rgba(23, 32, 27, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.76);
+    color: inherit;
+    font: 500 0.95rem var(--type-2);
 }
 
-.btn-cancel-booking:hover {
-    background: linear-gradient(
-        135deg,
-        rgba(244, 67, 54, 0.25),
-        rgba(244, 67, 54, 0.1)
-    );
-    border-color: rgba(244, 67, 54, 0.4);
-    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.15);
+html.dark .profile-form input {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.profile-form input:focus {
+    outline: 2px solid rgba(56, 104, 75, 0.28);
+    outline-offset: 2px;
+}
+
+.profile-primary-button,
+.profile-secondary-button,
+.profile-ghost-button,
+.profile-danger-button {
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-family: var(--type-3);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background 160ms ease;
+    white-space: nowrap;
+}
+
+.profile-primary-button {
+    background: #24392d;
+    color: #fffdf2;
+}
+
+.profile-secondary-button {
+    border-color: rgba(36, 57, 45, 0.25);
+    background: rgba(36, 57, 45, 0.08);
+    color: #24392d;
+}
+
+.profile-ghost-button {
+    border-color: rgba(23, 32, 27, 0.12);
+    background: rgba(255, 255, 255, 0.44);
+    color: inherit;
+}
+
+.profile-danger-button {
+    border-color: rgba(174, 53, 43, 0.24);
+    background: rgba(174, 53, 43, 0.1);
+    color: #9d3027;
+}
+
+html.dark .profile-primary-button {
+    background: #dbe6d7;
+    color: #17201b;
+}
+
+html.dark .profile-secondary-button {
+    border-color: rgba(219, 230, 215, 0.28);
+    background: rgba(219, 230, 215, 0.08);
+    color: #eef5ea;
+}
+
+html.dark .profile-ghost-button {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark .profile-danger-button {
+    color: #ffaca4;
+}
+
+.profile-primary-button:hover,
+.profile-secondary-button:hover,
+.profile-ghost-button:hover,
+.profile-danger-button:hover {
     transform: translateY(-1px);
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 768px) {
+.profile-primary-button:disabled,
+.profile-danger-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+}
+
+.profile-security-panel {
+    align-self: start;
+}
+
+.profile-security-panel .profile-secondary-button {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.profile-bookings-panel {
+    margin-top: 1rem;
+}
+
+.profile-bookings-list {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.1rem;
+}
+
+.profile-booking {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid rgba(23, 32, 27, 0.1);
+    border-left: 4px solid #377d52;
+    border-radius: 8px;
+    background: rgba(247, 249, 244, 0.62);
+}
+
+.profile-booking.is-cancelled {
+    border-left-color: #ae352b;
+    opacity: 0.72;
+}
+
+.profile-booking.is-pending {
+    border-left-color: #b7791f;
+}
+
+html.dark .profile-booking {
+    border-color: rgba(255, 255, 255, 0.09);
+    border-left-color: #8bc9a0;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .profile-booking.is-cancelled {
+    border-left-color: #ff8a80;
+}
+
+html.dark .profile-booking.is-pending {
+    border-left-color: #e8b15b;
+}
+
+.profile-booking h3,
+.profile-empty h3 {
+    margin: 0.2rem 0;
+    font-family: var(--type-1);
+    font-size: 1.15rem;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.profile-booking-date {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+}
+
+.profile-booking-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+}
+
+.profile-booking-meta span,
+.profile-status {
+    padding: 0.4rem 0.55rem;
+    border-radius: 8px;
+    background: rgba(36, 57, 45, 0.08);
+    color: #24392d;
+    font-family: var(--type-3);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+
+html.dark .profile-booking-meta span,
+html.dark .profile-status {
+    background: rgba(255, 255, 255, 0.07);
+    color: #edf4eb;
+}
+
+.profile-empty,
+.profile-state,
+.profile-guest {
+    padding: 2rem;
+    text-align: center;
+}
+
+.profile-state,
+.profile-guest {
+    border-radius: 8px;
+}
+
+.profile-guest {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: center;
+    text-align: center;
+}
+
+.profile-danger-zone {
+    margin-top: 1rem;
+    align-items: center;
+}
+
+@media (max-width: 860px) {
     .profile-page {
-        padding: 6rem 1.5rem 3rem;
+        padding-top: 6rem;
     }
 
-    .profile-container > h1 {
-        font-size: 2.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .profile-section {
-        padding: 1.75rem 1.5rem;
-    }
-
-    .profile-section h2 {
-        font-size: 1.35rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .info-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-
-    .info-value {
-        width: 100%;
-        text-align: left;
-        min-width: auto;
-    }
-
-    .form-actions {
-        flex-direction: column;
-    }
-
-    .profile-actions {
-        flex-direction: column;
-    }
-
-    .booking-details {
+    .profile-hero,
+    .profile-grid,
+    .profile-booking {
         grid-template-columns: 1fr;
     }
 
-    .booking-header {
+    .profile-hero-actions,
+    .profile-booking-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .profile-hero-actions > *,
+    .profile-booking-actions > * {
+        flex: 1;
+    }
+
+    .profile-stats,
+    .profile-details,
+    .profile-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-stats > div {
+        border-right: 0;
+        border-bottom: 1px solid rgba(23, 32, 27, 0.1);
+    }
+
+    .profile-stats > div:last-child {
+        border-bottom: 0;
+    }
+
+    .profile-panel-header,
+    .profile-danger-zone {
         flex-direction: column;
-        align-items: flex-start;
     }
 
-    .booking-status {
-        align-self: flex-start;
-    }
-
-    .booking-service-info {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .btn-edit,
-    .btn-secondary,
-    .btn-logout,
-    .btn-delete,
-    .profile-form button[type="submit"] {
+    .profile-panel-header > button,
+    .profile-danger-zone > button,
+    .profile-form-actions > button {
         width: 100%;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 520px) {
     .profile-page {
-        padding: 5rem 1rem 2rem;
+        padding-inline: 0.85rem;
     }
 
-    .profile-container > h1 {
-        font-size: 2rem;
+    .profile-avatar {
+        width: 4.75rem;
+        height: 4.75rem;
+        font-size: 1.75rem;
     }
 
-    .profile-section {
-        padding: 1.5rem 1.25rem;
-        border-radius: 16px;
+    .profile-panel,
+    .profile-danger-zone,
+    .profile-hero {
+        padding: 1rem;
+    }
+
+    .profile-hero-actions,
+    .profile-form-actions {
+        flex-direction: column;
+    }
+
+    .profile-primary-button,
+    .profile-secondary-button,
+    .profile-ghost-button,
+    .profile-danger-button {
+        width: 100%;
+        white-space: normal;
     }
 }

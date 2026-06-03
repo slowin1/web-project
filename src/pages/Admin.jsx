@@ -1,11 +1,16 @@
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useDashboardData } from '../hooks/useDashboardData';
-import { useContent } from '../hooks/useContent';
+import {
+  formatAnalyticsLabel,
+  formatAnalyticsPageName,
+  formatAnalyticsVisitTime,
+  useDashboardData,
+} from '../hooks/useDashboardData';
 import { useSettings } from '../hooks/useSettings';
 import ServicesManager from '../components/Admin/ServicesManager';
 import UsersManager from '../components/Admin/UsersManager';
 import { ADMIN_LANGUAGES, getStoredAdminLanguage, setStoredAdminLanguage, useAdminText } from '../components/Admin/adminI18n';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { CONTENT_TYPES, composeArticleBody, contentItemsAPI, parseArticleBody } from '../api/contentItems';
 
 export function AdminDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
@@ -17,11 +22,17 @@ export function AdminDashboard() {
     hourlyData,
     deviceData,
     trafficSources,
+    pageData,
+    recentVisits,
+    completedServices,
     loading: dashboardLoading,
     refreshData,
   } = useDashboardData();
 
   const COLORS = ['#007aff', '#34c759', '#ff9500', '#af52de'];
+  const hasVisitorActivity = visitorData.some(
+    (item) => Number(item.visitors) > 0 || Number(item.unique) > 0,
+  );
 
   const formatStatNumber = (value) => {
     if (typeof value === 'number') {
@@ -84,32 +95,32 @@ export function AdminDashboard() {
           <div className="stat-icon">VIS</div>
           <div className="stat-info">
             <h4>{t.dashboard.totalVisitors}</h4>
-            <p className="stat-number">{stats?.totalVisitors ? formatStatNumber(stats.totalVisitors) : '32.8K'}</p>
-            <span className="stat-change positive">+12.5%</span>
+            <p className="stat-number">{formatStatNumber(stats?.totalVisitors ?? 0)}</p>
+            <span className="stat-change positive">Live</span>
           </div>
         </div>
         <div className="admin-stat-card gradient-2">
           <div className="stat-icon">UNI</div>
           <div className="stat-info">
             <h4>{t.dashboard.uniqueVisitors}</h4>
-            <p className="stat-number">{stats?.uniqueVisitors ? formatStatNumber(stats.uniqueVisitors) : '24.4K'}</p>
-            <span className="stat-change positive">+8.3%</span>
+            <p className="stat-number">{formatStatNumber(stats?.uniqueVisitors ?? 0)}</p>
+            <span className="stat-change positive">Live</span>
           </div>
         </div>
         <div className="admin-stat-card gradient-3">
           <div className="stat-icon">AVG</div>
           <div className="stat-info">
             <h4>{t.dashboard.avgSession}</h4>
-            <p className="stat-number">{stats?.avgSession || '4m 32s'}</p>
-            <span className="stat-change positive">+15.2%</span>
+            <p className="stat-number">{stats?.avgSession || '0m'}</p>
+            <span className="stat-change positive">Logs</span>
           </div>
         </div>
         <div className="admin-stat-card gradient-4">
           <div className="stat-icon">REV</div>
           <div className="stat-info">
             <h4>{t.dashboard.revenue}</h4>
-            <p className="stat-number">{stats?.revenue ? '$' + formatStatNumber(stats.revenue) : '$12.8K'}</p>
-            <span className="stat-change positive">+23.1%</span>
+            <p className="stat-number">{formatStatNumber(stats?.revenue ?? 0)} ₽</p>
+            <span className="stat-change positive">Completed</span>
           </div>
         </div>
       </div>
@@ -119,7 +130,7 @@ export function AdminDashboard() {
           <h4>{t.dashboard.visitorAnalytics}</h4>
         </div>
 
-        {visitorData && visitorData.length > 0 ? (
+        {visitorData && visitorData.length > 0 && hasVisitorActivity ? (
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={visitorData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
@@ -133,9 +144,9 @@ export function AdminDashboard() {
                 </linearGradient>
               </defs>
 
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="name" stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
-              <YAxis stroke="rgba(255,255,255,0.6)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--admin-border-soft)" />
+              <XAxis dataKey="name" stroke="var(--admin-muted)" tick={{ fill: 'var(--admin-muted)', fontSize: 12 }} />
+              <YAxis allowDecimals={false} stroke="var(--admin-muted)" tick={{ fill: 'var(--admin-muted)', fontSize: 12 }} />
               <Tooltip />
               <Legend />
               <Area type="monotone" dataKey="visitors" stroke="#007aff" fillOpacity={1} fill="url(#colorVisitors)" name="Visitors" />
@@ -236,6 +247,95 @@ export function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      <div className="charts-row">
+        <div className="chart-container half">
+          <div className="chart-header">
+            <h4>Страницы</h4>
+          </div>
+
+          <div className="traffic-sources">
+            {pageData.length > 0 ? (
+              pageData.map((page, index) => {
+                const maxValue = Math.max(...pageData.map((item) => item.value), 1);
+                return (
+                  <div key={page.name} className="traffic-source-item">
+                    <div className="source-info">
+                      <span className="source-dot" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                      <span className="source-name">{page.label}</span>
+                    </div>
+                    <div className="source-bar">
+                      <div
+                        className="source-progress"
+                        style={{
+                          width: `${Math.max((page.value / maxValue) * 100, 8)}%`,
+                          backgroundColor: COLORS[index % COLORS.length],
+                        }}
+                      />
+                    </div>
+                    <span className="source-value">{page.value}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="loading-text">Пока нет данных по страницам</p>
+            )}
+          </div>
+        </div>
+
+        <div className="chart-container half">
+          <div className="chart-header">
+            <h4>Последние визиты</h4>
+          </div>
+
+          {recentVisits.length > 0 ? (
+            <div className="analytics-visits-list">
+              {recentVisits.map((visit) => (
+                <div className="analytics-visit-row" key={visit.id}>
+                  <div>
+                    <strong>{formatAnalyticsPageName(visit.page)}</strong>
+                    <span>{visit.visitor}</span>
+                  </div>
+	                  <div>
+	                    <span>{formatAnalyticsLabel(visit.device)}</span>
+	                    <span>{formatAnalyticsLabel(visit.source)}</span>
+	                    <span>{visit.duration ? `${visit.duration}s` : 'Live'}</span>
+	                    <span>{formatAnalyticsVisitTime(visit.date)}</span>
+	                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="loading-text">Пока нет визитов</p>
+          )}
+        </div>
+      </div>
+
+      <div className="chart-container">
+        <div className="chart-header">
+          <h4>Проведенные услуги</h4>
+        </div>
+
+        {completedServices.length > 0 ? (
+          <div className="analytics-visits-list">
+            {completedServices.slice(0, 10).map((service) => (
+              <div className="analytics-visit-row" key={service.id ?? service.Id}>
+                <div>
+                  <strong>{service.serviceName ?? service.ServiceName}</strong>
+                  <span>{service.specialistName ?? service.SpecialistName}</span>
+                </div>
+                <div>
+                  <span>{(service.clientName ?? service.ClientName) || "Клиент"}</span>
+                  <span>{Number(service.price ?? service.Price ?? 0)} ₽</span>
+                  <span>{formatAnalyticsVisitTime(new Date(service.completedOn ?? service.CompletedOn))}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="loading-text">Пока нет завершенных услуг за выбранный период</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -249,48 +349,397 @@ export function AdminServices() {
 }
 
 export function AdminContent() {
-  const { pages, posts, media, loading: contentLoading } = useContent();
   const { t } = useAdminText();
+  const [activeType, setActiveType] = useState(CONTENT_TYPES.gallery);
+  const [items, setItems] = useState([]);
+  const [editingItem, setEditingItem] = useState(null);
+  const [form, setForm] = useState(createEmptyContentForm(CONTENT_TYPES.gallery));
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const tabs = [
+    {
+      type: CONTENT_TYPES.gallery,
+      title: "Галерея",
+      caption: "Фото персонала, салона и атмосферы для /work",
+    },
+    {
+      type: CONTENT_TYPES.blog,
+      title: "Блог",
+      caption: "Статьи и материалы для /project",
+    },
+    {
+      type: CONTENT_TYPES.contact,
+      title: "Контакты",
+      caption: "Поля контактной страницы /contact",
+    },
+  ];
+
+  const activeTab = tabs.find((tab) => tab.type === activeType) || tabs[0];
+
+  useEffect(() => {
+    setEditingItem(null);
+    setForm(createEmptyContentForm(activeType));
+    loadItems(activeType);
+  }, [activeType]);
+
+  async function loadItems(type = activeType) {
+    setLoading(true);
+    setError("");
+
+    try {
+      const data = await contentItemsAPI.getAll(type);
+      setItems(data);
+    } catch (loadError) {
+      console.error("Content load error:", loadError);
+      setError("Не удалось загрузить контент");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleFieldChange(event) {
+    const { name, value, type, checked } = event.target;
+    setForm((current) => ({
+      ...current,
+      [name]: type === "checkbox" ? checked : value,
+      ...(activeType === CONTENT_TYPES.blog && name === "title" && !editingItem
+        ? { slug: slugify(value) }
+        : {}),
+    }));
+  }
+
+  function startEdit(item) {
+    const articleBody = parseArticleBody(item.body);
+
+    setEditingItem(item);
+    setForm({
+      title: item.title,
+      slug: item.slug,
+      subtitle: item.subtitle,
+      body: articleBody.text,
+      articleImages: articleBody.images.join("\n"),
+      imageUrl: item.imageUrl,
+      sortOrder: item.sortOrder,
+      isActive: item.isActive,
+    });
+  }
+
+  function resetForm() {
+    setEditingItem(null);
+    setForm(createEmptyContentForm(activeType));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    try {
+      const payload =
+        activeType === CONTENT_TYPES.blog
+          ? {
+              ...form,
+              body: composeArticleBody(form.body, form.articleImages.split(/\r?\n/)),
+            }
+          : form;
+
+      if (editingItem) {
+        await contentItemsAPI.update(editingItem.id, payload, activeType);
+      } else {
+        await contentItemsAPI.create(payload, activeType);
+      }
+
+      resetForm();
+      await loadItems(activeType);
+    } catch (saveError) {
+      console.error("Content save error:", saveError);
+      setError("Не удалось сохранить контент");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(item) {
+    if (!window.confirm(`Удалить "${item.title}"?`)) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      await contentItemsAPI.delete(item.id);
+      if (editingItem?.id === item.id) {
+        resetForm();
+      }
+      await loadItems(activeType);
+    } catch (deleteError) {
+      console.error("Content delete error:", deleteError);
+      setError("Не удалось удалить контент");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const needsSlug = activeType === CONTENT_TYPES.blog;
+  const needsImage = activeType !== CONTENT_TYPES.contact;
+  const needsBody = activeType === CONTENT_TYPES.blog;
+  const titleLabel = activeType === CONTENT_TYPES.contact ? "Название поля" : "Название";
+  const subtitleLabel =
+    activeType === CONTENT_TYPES.contact
+      ? "Значение"
+      : activeType === CONTENT_TYPES.blog
+        ? "Короткое описание для /project"
+        : "Короткое описание";
+  const imageLabel = activeType === CONTENT_TYPES.blog ? "Баннер статьи URL" : "Изображение URL";
+  const articlePreviewPath =
+    activeType === CONTENT_TYPES.blog && (form.slug || form.id || form.title)
+      ? `/project/${encodeURIComponent(form.slug || form.id || form.title)}`
+      : "";
 
   return (
     <div className="admin-section">
-      <div className="admin-header">
-        <h3>{t.content.title}</h3>
-        <button className="btn-primary">{t.content.create}</button>
+      <div className="admin-hero-panel">
+        <div>
+          <p className="admin-panel-eyebrow">Content studio</p>
+          <h3>{t.content.title}</h3>
+          <p className="admin-panel-copy">
+            Управляй галереей, блогом и контактными полями без изменения кода.
+          </p>
+        </div>
+        <button type="button" className="btn-secondary" onClick={() => loadItems(activeType)}>
+          Обновить
+        </button>
       </div>
 
-      {contentLoading ? (
-        <p className="loading-text">{t.content.loading}</p>
-      ) : (
-        <div className="content-grid">
-          <div className="content-card-modern">
-            <div className="content-icon">PG</div>
-            <h4>{t.content.pages}</h4>
-            <p>{pages.length} {t.content.pagesCount}</p>
-            <button className="btn-secondary">{t.content.managePages}</button>
+      <div className="content-tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.type}
+            type="button"
+            className={activeType === tab.type ? "active" : ""}
+            onClick={() => setActiveType(tab.type)}
+          >
+            <span>{tab.title}</span>
+            <small>{tab.caption}</small>
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="admin-error-text">{error}</p>}
+
+      <div className="content-editor-layout">
+        <form className="admin-form content-editor-form" onSubmit={handleSubmit}>
+          <div className="content-editor-heading">
+            <h4>{editingItem ? "Редактирование" : `Новый элемент: ${activeTab.title}`}</h4>
+            <p>{activeTab.caption}</p>
           </div>
-          <div className="content-card-modern">
-            <div className="content-icon">BL</div>
-            <h4>{t.content.posts}</h4>
-            <p>{posts.length} {t.content.postsCount}</p>
-            <button className="btn-secondary">{t.content.managePosts}</button>
+
+          <div className="form-group">
+            <label htmlFor="content-title">{titleLabel}</label>
+            <input
+              id="content-title"
+              name="title"
+              type="text"
+              value={form.title}
+              onChange={handleFieldChange}
+              required
+              placeholder={activeType === CONTENT_TYPES.contact ? "Например: Телефон" : "Название"}
+            />
           </div>
-          <div className="content-card-modern">
-            <div className="content-icon">MD</div>
-            <h4>{t.content.media}</h4>
-            <p>{media.length} {t.content.mediaCount}</p>
-            <button className="btn-secondary">{t.content.browseMedia}</button>
+
+          {needsSlug && (
+            <div className="form-group">
+              <label htmlFor="content-slug">Slug</label>
+              <input
+                id="content-slug"
+                name="slug"
+                type="text"
+                value={form.slug}
+                onChange={handleFieldChange}
+                placeholder="kak-vybrat-massazh"
+              />
+              <small className="content-field-hint">
+                URL статьи: /project/{form.slug || "slug-stati"}
+              </small>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="content-subtitle">{subtitleLabel}</label>
+            <input
+              id="content-subtitle"
+              name="subtitle"
+              type="text"
+              value={form.subtitle}
+              onChange={handleFieldChange}
+              placeholder={activeType === CONTENT_TYPES.contact ? "+373 123 456" : "Короткая подпись"}
+            />
           </div>
-          <div className="content-card-modern">
-            <div className="content-icon">AN</div>
-            <h4>{t.content.analytics}</h4>
-            <p>{t.content.performance}</p>
-            <button className="btn-secondary">{t.content.viewStats}</button>
+
+          {needsImage && (
+            <div className="form-group">
+              <label htmlFor="content-image">{imageLabel}</label>
+              <input
+                id="content-image"
+                name="imageUrl"
+                type="url"
+                value={form.imageUrl}
+                onChange={handleFieldChange}
+                placeholder="https://..."
+              />
+            </div>
+          )}
+
+          {needsBody && (
+            <>
+              <div className="form-group">
+                <label htmlFor="content-body">Текст статьи</label>
+                <textarea
+                  id="content-body"
+                  name="body"
+                  className="services-textarea"
+                  value={form.body}
+                  onChange={handleFieldChange}
+                  placeholder="Полный текст статьи, который откроется на странице /project/slug"
+                  rows={10}
+                />
+                <small className="content-field-hint">
+                  Это поле показывается на отдельной странице статьи. На /project показывается короткое описание выше.
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="content-article-images">Дополнительные изображения статьи</label>
+                <textarea
+                  id="content-article-images"
+                  name="articleImages"
+                  className="services-textarea"
+                  value={form.articleImages}
+                  onChange={handleFieldChange}
+                  placeholder="Один URL на строку: https://..."
+                  rows={5}
+                />
+                <small className="content-field-hint">
+                  Эти изображения появятся ниже текста на странице отдельной статьи.
+                </small>
+              </div>
+            </>
+          )}
+
+          <div className="services-row">
+            <div className="form-group">
+              <label htmlFor="content-sort">Порядок</label>
+              <input
+                id="content-sort"
+                name="sortOrder"
+                type="number"
+                value={form.sortOrder}
+                onChange={handleFieldChange}
+              />
+            </div>
+            <label className="content-checkbox">
+              <input
+                name="isActive"
+                type="checkbox"
+                checked={form.isActive}
+                onChange={handleFieldChange}
+              />
+              Показывать на сайте
+            </label>
           </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? "Сохраняю..." : editingItem ? "Сохранить" : "Добавить"}
+            </button>
+            {articlePreviewPath && (
+              <a className="btn-secondary" href={articlePreviewPath} target="_blank" rel="noreferrer">
+                Открыть статью
+              </a>
+            )}
+            <button type="button" className="btn-secondary" onClick={resetForm} disabled={saving}>
+              Очистить
+            </button>
+          </div>
+        </form>
+
+        <div className="content-items-panel">
+          <div className="content-editor-heading">
+            <h4>{activeTab.title}</h4>
+            <p>{items.length} элементов</p>
+          </div>
+
+          {loading ? (
+            <p className="loading-text">{t.content.loading}</p>
+          ) : items.length === 0 ? (
+            <p className="loading-text">Пока ничего не добавлено</p>
+          ) : (
+            <div className="content-items-list">
+              {items.map((item) => (
+                <div className="content-item-row" key={item.id}>
+                  {item.imageUrl && (
+                    <img src={item.imageUrl} alt="" />
+                  )}
+                  <div className="content-item-main">
+                    <div className="content-item-title">
+                      <strong>{item.title}</strong>
+                      {!item.isActive && <span>Скрыто</span>}
+                    </div>
+                    <p>{item.subtitle || item.slug || "Без подписи"}</p>
+                  </div>
+                  <div className="content-item-actions">
+                    {activeType === CONTENT_TYPES.blog && (
+                      <a
+                        className="btn-secondary"
+                        href={`/project/${encodeURIComponent(item.slug || item.id || item.title)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View
+                      </a>
+                    )}
+                    <button type="button" className="btn-secondary" onClick={() => startEdit(item)}>
+                      Edit
+                    </button>
+                    <button type="button" className="btn-secondary danger" onClick={() => handleDelete(item)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
+}
+
+function createEmptyContentForm(type) {
+  return {
+    title: "",
+    slug: "",
+    subtitle: "",
+    body: "",
+    articleImages: "",
+    imageUrl: "",
+    sortOrder: 0,
+    isActive: true,
+    contentType: type,
+  };
+}
+
+function slugify(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/ё/g, "e")
+    .replace(/[^a-zа-я0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export function AdminSettings() {

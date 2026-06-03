@@ -3,12 +3,23 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 let lenis = null;
+let lenisTicker = null;
 
 // initialization
 document.addEventListener("DOMContentLoaded", () => initLenisScroll());
 
 // smooth scroll setup with responsive config
 function initLenisScroll() {
+  if (lenisTicker) {
+    gsap.ticker.remove(lenisTicker);
+    lenisTicker = null;
+  }
+
+  if (lenis) {
+    lenis.destroy();
+    lenis = null;
+  }
+
   const isMobile = window.innerWidth <= 1000;
 
   lenis = new Lenis({
@@ -20,7 +31,8 @@ function initLenisScroll() {
   });
 
   lenis.on("scroll", ScrollTrigger.update);
-  gsap.ticker.add((time) => lenis.raf(time * 1000));
+  lenisTicker = (time) => lenis?.raf(time * 1000);
+  gsap.ticker.add(lenisTicker);
   gsap.ticker.lagSmoothing(0);
 
   window.lenis = lenis;

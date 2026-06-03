@@ -1,721 +1,808 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Backend API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
 const API_ENDPOINTS = {
-  getProfile: `${API_BASE_URL}/Auth/profile`,
-  updateProfile: `${API_BASE_URL}/Auth/profile`,
-  changePassword: `${API_BASE_URL}/Auth/change-password`,
-  logout: `${API_BASE_URL}/Auth/logout`,
-  deleteAccount: `${API_BASE_URL}/Auth/account`,
-  getBookings: `${API_BASE_URL}/ServiceBookings`,
-  cancelBooking: `${API_BASE_URL}/ServiceBookings`,
+  profile: `${API_BASE_URL}/Users/profile`,
+  legacyProfile: `${API_BASE_URL}/users/profile`,
+  users: `${API_BASE_URL}/Users`,
+  changePassword: `${API_BASE_URL}/users/change-password`,
+  legacyChangePassword: `${API_BASE_URL}/Users/change-password`,
+  logout: `${API_BASE_URL}/users/logout`,
+  deleteAccount: `${API_BASE_URL}/users/account`,
+  bookings: `${API_BASE_URL}/ServiceBookings`,
 };
 
-function formatBookingTime(value) {
-  if (!value) return "";
+function getToken() {
+  return localStorage.getItem("authToken") || localStorage.getItem("adminToken");
+}
 
-  return new Date(value).toLocaleTimeString("ru-RU", {
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+}
+
+async function requestJson(url, options = {}) {
+  const token = getToken();
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+
+  const text = await response.text();
+  const contentType = response.headers.get("content-type") || "";
+  const body = text && contentType.includes("application/json")
+    ? JSON.parse(text)
+    : text;
+
+  if (!response.ok) {
+    const message =
+      body?.message ||
+      body?.title ||
+      (typeof body === "string" && body) ||
+      `Request failed (${response.status})`;
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+
+  return body || null;
+}
+
+function normalizeUser(raw) {
+  if (!raw) return null;
+  const source = raw.user || raw.data || raw;
+
+  return {
+    ...source,
+    id: source.id ?? source.userId ?? source.UserId ?? source.Id,
+    firstName: source.firstName ?? source.FirstName ?? "",
+    lastName: source.lastName ?? source.LastName ?? "",
+    userName:
+      source.userName ??
+      source.UserName ??
+      source.username ??
+      source.Username ??
+      "",
+    email: source.email ?? source.Email ?? "",
+    phone: source.phone ?? source.Phone ?? source.phoneNumber ?? source.PhoneNumber ?? "",
+    role: source.role ?? source.Role,
+    createdAt:
+      source.createdAt ??
+      source.CreatedAt ??
+      source.joinedAt ??
+      source.JoinedAt ??
+      "",
+  };
+}
+
+function formatDate(value) {
+  if (!value) return "Не указано";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Не указано";
+
+  return date.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatBookingTime(value) {
+  if (!value) return "Не указано";
+  const textValue = String(value);
+  const timeMatch = textValue.match(/T?(\d{2}:\d{2})(?::\d{2})?/);
+
+  if (timeMatch) {
+    return timeMatch[1];
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return textValue.slice(0, 5);
+  }
+
+  return date.toLocaleTimeString("ru-RU", {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-function parseSpecialistFromDescription(description) {
+function parseField(description, label) {
   if (!description) return "";
-  const match = description.match(/Специалист:\s*([^;]+)/i);
+  const match = description.match(new RegExp(`${label}:\\s*([^;]+)`, "i"));
   return match ? match[1].trim() : "";
 }
 
-function mapApiBooking(booking) {
-  return {
-    id: booking.id,
-    serviceId: booking.bookingId,
-    serviceName: booking.bookingName,
-    specialist: parseSpecialistFromDescription(booking.bookingDescription),
-    date: booking.bookingDate,
-    time: formatBookingTime(booking.bookingTime),
-    status: "confirmed",
-    duration: "-",
-    price: "-",
+function normalizeBooking(raw) {
+  const source = raw.booking || raw.data || raw;
+  const rawStatus = source.status ?? source.Status ?? 0;
+  const statusMap = {
+    0: "pending",
+    1: "confirmed",
+    2: "cancelled",
+    3: "completed",
+    4: "no-show",
+    5: "rejected",
   };
+  const status = statusMap[Number(rawStatus)] || String(rawStatus).toLowerCase();
+  const description = source.bookingDescription ?? source.BookingDescription ?? "";
+
+  return {
+    id: source.id ?? source.Id,
+    serviceId: source.bookingId ?? source.BookingId ?? source.serviceId ?? source.ServiceId,
+    serviceName:
+      source.serviceName ||
+      source.ServiceName ||
+      parseField(description, "Услуга") ||
+      source.bookingName ||
+      source.BookingName ||
+      "Запись",
+    specialist:
+      source.specialist ||
+      source.Specialist ||
+      parseField(description, "Специалист") ||
+      "",
+    clientName: parseField(description, "Клиент"),
+    phone: parseField(description, "Телефон"),
+    clientUserId: source.clientUserId ?? source.ClientUserId ?? "",
+    date: source.bookingDate ?? source.BookingDate ?? source.date ?? source.Date,
+    time:
+      parseField(description, "Время") ||
+      formatBookingTime(source.bookingTime ?? source.BookingTime ?? source.time ?? source.Time),
+    duration: source.duration ?? source.Duration ?? "-",
+    price: source.price ?? source.Price ?? "",
+    status,
+  };
+}
+
+function getInitials(user) {
+  const first = user?.firstName?.trim()?.[0] || "";
+  const last = user?.lastName?.trim()?.[0] || "";
+  const fallback = user?.userName?.trim()?.[0] || "U";
+  return `${first}${last}` || fallback;
+}
+
+function isActiveBooking(booking) {
+  return ["confirmed", "pending", "active"].includes(booking.status);
 }
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
 
-  // Profile update form
   const [profileData, setProfileData] = useState({
-    username: "",
+    firstName: "",
+    lastName: "",
+    userName: "",
     email: "",
+    phone: "",
   });
 
-  // Password change form
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  // Bookings
-  const [bookings, setBookings] = useState([]);
-  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const displayName = useMemo(() => {
+    const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+    return fullName || user?.userName || "Пользователь";
+  }, [user]);
 
-  // Load user profile on mount
+  const upcomingBookings = useMemo(
+    () => bookings.filter((booking) => booking.status !== "cancelled").length,
+    [bookings],
+  );
+
   useEffect(() => {
-    loadUserProfile();
-    loadBookings();
-  }, []);
+    let mounted = true;
 
-  const loadUserProfile = async () => {
-    setLoading(true);
-    setError("");
+    async function loadPageData() {
+      setLoading(true);
+      setBookingsLoading(true);
+      setError("");
 
-    try {
-      const token = localStorage.getItem("authToken");
-
+      const token = getToken();
       if (!token) {
         setUser(null);
         setLoading(false);
-        return;
-      }
-
-      const response = await fetch(API_ENDPOINTS.getProfile, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("user");
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to load profile");
-      }
-
-      const data = await response.json();
-      setUser(data.user);
-      setProfileData({
-        username: data.user.username || "",
-        email: data.user.email || "",
-      });
-    } catch (err) {
-      console.error("Profile load error:", err);
-
-      // Fallback: use localStorage data if backend unavailable
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
-          setProfileData({
-            username: userData.username || "",
-            email: userData.email || "",
-          });
-          setError("Backend unavailable. Showing cached data from login.");
-          return;
-        } catch (e) {
-          console.error("Failed to parse stored user:", e);
-        }
-      }
-
-      setError(err.message || "Failed to load profile. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load bookings
-  const loadBookings = async () => {
-    setBookingsLoading(true);
-
-    try {
-      const token = localStorage.getItem("authToken");
-
-      if (!token) {
         setBookingsLoading(false);
         return;
       }
 
-      const response = await fetch(API_ENDPOINTS.getBookings, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const storedUser = normalizeUser(getStoredUser());
+      let nextUser = storedUser;
 
-      if (!response.ok) {
-        throw new Error("Failed to load bookings");
-      }
-
-      const data = await response.json();
-      const apiBookings = Array.isArray(data) ? data : data.bookings || [];
-      setBookings(apiBookings.map(mapApiBooking));
-    } catch (err) {
-      console.error("Bookings load error:", err);
-
-      // Fallback: load from localStorage
-      const storedBookings = localStorage.getItem("userBookings");
-      if (storedBookings) {
-        try {
-          setBookings(JSON.parse(storedBookings));
-        } catch (e) {
-          console.error("Failed to parse stored bookings:", e);
+      try {
+        nextUser = await loadUserProfile(storedUser);
+      } catch (err) {
+        if (err.status === 401) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("adminToken");
+          localStorage.removeItem("user");
+          if (mounted) setUser(null);
+          return;
         }
-      }
-    } finally {
-      setBookingsLoading(false);
-    }
-  };
 
-  // Cancel booking
-  const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("authToken");
-
-      const response = await fetch(
-        `${API_ENDPOINTS.cancelBooking}/${bookingId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to cancel booking");
+        if (!storedUser) {
+          if (mounted) setError(err.message || "Не удалось загрузить профиль");
+        } else if (mounted) {
+          setError("Не удалось обновить профиль с сервера. Показаны сохраненные данные.");
+        }
+      } finally {
+        if (mounted) setLoading(false);
       }
 
-      // Update local state
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId ? { ...b, status: "cancelled" } : b,
-        ),
-      );
-      setSuccessMessage("Booking cancelled successfully");
-    } catch (err) {
-      console.error("Cancel booking error:", err);
+      if (nextUser && mounted) {
+        applyUser(nextUser);
+      }
 
-      // Fallback: cancel in localStorage
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId ? { ...b, status: "cancelled" } : b,
-        ),
-      );
-      const updated = JSON.parse(localStorage.getItem("userBookings") || "[]");
-      const cancelled = updated.map((b) =>
-        b.id === bookingId ? { ...b, status: "cancelled" } : b,
-      );
-      localStorage.setItem("userBookings", JSON.stringify(cancelled));
-      setSuccessMessage("Booking cancelled (offline mode)");
+      try {
+        const nextBookings = await loadUserBookings(nextUser);
+        if (mounted) setBookings(nextBookings);
+      } catch (err) {
+        const currentUserId = String(nextUser?.id || "");
+        const cachedBookings = JSON.parse(localStorage.getItem("userBookings") || "[]");
+        const ownCachedBookings = cachedBookings.filter((booking) =>
+          booking.clientUserId && String(booking.clientUserId) === currentUserId
+        );
+        if (mounted) setBookings(ownCachedBookings.map(normalizeBooking));
+      } finally {
+        if (mounted) setBookingsLoading(false);
+      }
     }
-  };
 
-  // Handle profile data input changes
-  const handleProfileChange = (e) => {
+    loadPageData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function loadUserProfile(storedUser) {
+    const candidates = [
+      API_ENDPOINTS.profile,
+      API_ENDPOINTS.legacyProfile,
+      storedUser?.id ? `${API_ENDPOINTS.users}/${storedUser.id}` : null,
+    ].filter(Boolean);
+
+    let lastError = null;
+    for (const url of candidates) {
+      try {
+        const data = await requestJson(url);
+        return normalizeUser(data);
+      } catch (err) {
+        lastError = err;
+        if (err.status === 401) throw err;
+      }
+    }
+
+    throw lastError || new Error("Не удалось загрузить профиль");
+  }
+
+  async function loadUserBookings(currentUser) {
+    const userId = currentUser?.id;
+    if (!userId) {
+      return [];
+    }
+
+    const data = await requestJson(`${API_ENDPOINTS.bookings}/user/${userId}`);
+    const list = Array.isArray(data) ? data : data?.bookings || data?.data || [];
+    return list.map(normalizeBooking);
+  }
+
+  function applyUser(nextUser) {
+    setUser(nextUser);
+    setProfileData({
+      firstName: nextUser.firstName || "",
+      lastName: nextUser.lastName || "",
+      userName: nextUser.userName || "",
+      email: nextUser.email || "",
+      phone: nextUser.phone || "",
+    });
+    localStorage.setItem("user", JSON.stringify(nextUser));
+  }
+
+  function handleProfileChange(e) {
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
     setError("");
-  };
+    setSuccessMessage("");
+  }
 
-  // Handle password data input changes
-  const handlePasswordChange = (e) => {
+  function handlePasswordChange(e) {
     const { name, value } = e.target;
     setPasswordData((prev) => ({ ...prev, [name]: value }));
     setError("");
-  };
+    setSuccessMessage("");
+  }
 
-  // Update profile handler
-  const handleUpdateProfile = async (e) => {
+  async function handleUpdateProfile(e) {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setError("");
     setSuccessMessage("");
 
-    try {
-      const token = localStorage.getItem("authToken");
+    const payload = {
+      ...user,
+      firstName: profileData.firstName.trim(),
+      lastName: profileData.lastName.trim(),
+      userName: profileData.userName.trim(),
+      username: profileData.userName.trim(),
+      email: profileData.email.trim(),
+      phone: profileData.phone.trim(),
+    };
 
-      const response = await fetch(API_ENDPOINTS.updateProfile, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          username: profileData.username,
-          email: profileData.email,
-        }),
-      });
+    const candidates = [
+      API_ENDPOINTS.profile,
+      API_ENDPOINTS.legacyProfile,
+      user?.id ? `${API_ENDPOINTS.users}/${user.id}` : null,
+    ].filter(Boolean);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update profile");
+    let lastError = null;
+    for (const url of candidates) {
+      try {
+        const data = await requestJson(url, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        applyUser(normalizeUser(data) || normalizeUser(payload));
+        setSuccessMessage("Профиль обновлен");
+        setIsEditing(false);
+        setSaving(false);
+        return;
+      } catch (err) {
+        lastError = err;
+        if (err.status === 401) break;
       }
-
-      const data = await response.json();
-      setUser(data.user);
-      setSuccessMessage("Profile updated successfully");
-      setIsEditing(false);
-
-      // Update local storage
-      localStorage.setItem("user", JSON.stringify(data.user));
-    } catch (err) {
-      console.error("Profile update error:", err);
-      setError(err.message || "Failed to update profile. Please try again.");
-    } finally {
-      setLoading(false);
     }
-  };
 
-  // Change password handler
-  const handleChangePassword = async (e) => {
+    setError(lastError?.message || "Не удалось сохранить профиль");
+    setSaving(false);
+  }
+
+  async function handleChangePassword(e) {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setError("");
     setSuccessMessage("");
 
-    // Validate passwords
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError("New passwords do not match");
-      setLoading(false);
+      setError("Новые пароли не совпадают");
+      setSaving(false);
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setError("New password must be at least 6 characters");
-      setLoading(false);
+      setError("Новый пароль должен быть минимум 6 символов");
+      setSaving(false);
       return;
     }
 
-    if (!passwordData.currentPassword) {
-      setError("Current password is required");
-      setLoading(false);
-      return;
-    }
+    const candidates = [
+      API_ENDPOINTS.changePassword,
+      API_ENDPOINTS.legacyChangePassword,
+    ];
 
-    try {
-      const token = localStorage.getItem("authToken");
-
-      const response = await fetch(API_ENDPOINTS.changePassword, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to change password");
-      }
-
-      setSuccessMessage("Password changed successfully");
-      setIsChangingPassword(false);
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    } catch (err) {
-      console.error("Password change error:", err);
-      setError(err.message || "Failed to change password. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Logout handler
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-
-      if (token) {
-        await fetch(API_ENDPOINTS.logout, {
+    let lastError = null;
+    for (const url of candidates) {
+      try {
+        await requestJson(url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          body: JSON.stringify({
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword,
+          }),
         });
+        setSuccessMessage("Пароль изменен");
+        setIsChangingPassword(false);
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setSaving(false);
+        return;
+      } catch (err) {
+        lastError = err;
       }
+    }
+
+    setError(lastError?.message || "Не удалось изменить пароль");
+    setSaving(false);
+  }
+
+  async function handleCancelBooking(bookingId) {
+    if (!window.confirm("Отменить эту запись?")) return;
+
+    try {
+      await requestJson(`${API_ENDPOINTS.bookings}/${bookingId}`, {
+        method: "DELETE",
+      });
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId ? { ...booking, status: "cancelled" } : booking,
+        ),
+      );
+      setSuccessMessage("Запись отменена");
     } catch (err) {
-      console.error("Logout error:", err);
+      setError(err.message || "Не удалось отменить запись");
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await requestJson(API_ENDPOINTS.logout, { method: "POST" });
+    } catch {
+      // Logout should still clear the local session.
     } finally {
-      // Clear local storage and redirect
       localStorage.removeItem("authToken");
+      localStorage.removeItem("adminToken");
       localStorage.removeItem("user");
-      navigate("/LogIn");
+      navigate("/LogIn", { replace: true });
     }
-  };
+  }
 
-  // Delete account handler
-  const handleDeleteAccount = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete your account? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
+  async function handleDeleteAccount() {
+    if (!window.confirm("Удалить аккаунт? Это действие нельзя отменить.")) return;
 
-    setLoading(true);
+    setSaving(true);
     setError("");
 
     try {
-      const token = localStorage.getItem("authToken");
-
-      const response = await fetch(API_ENDPOINTS.deleteAccount, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete account");
-      }
-
+      await requestJson(API_ENDPOINTS.deleteAccount, { method: "DELETE" });
       localStorage.removeItem("authToken");
+      localStorage.removeItem("adminToken");
       localStorage.removeItem("user");
-      navigate("/LogIn");
+      navigate("/LogIn", { replace: true });
     } catch (err) {
-      console.error("Delete account error:", err);
-      setError(err.message || "Failed to delete account. Please try again.");
-      setLoading(false);
+      setError(err.message || "Не удалось удалить аккаунт");
+      setSaving(false);
     }
-  };
+  }
 
-  // Loading state
   if (loading) {
     return (
-      <div className="profile-page">
-        <div className="profile-container">
-          <p>Loading profile...</p>
-        </div>
-      </div>
+      <main className="profile-page">
+        <section className="profile-shell profile-state">
+          <p>Загружаем профиль...</p>
+        </section>
+      </main>
     );
   }
 
-  // Not logged in - show guest view
   if (!user) {
     return (
-      <div className="profile-page">
-        <div className="profile-container">
-          <h1>Profile</h1>
-          <div className="profile-section">
-            <p
-              style={{
-                fontFamily: "var(--type-3)",
-                fontSize: "0.9rem",
-                textTransform: "uppercase",
-                opacity: 0.7,
-                textAlign: "center",
-              }}
-            >
-              Please log in to view your profile
+      <main className="profile-page">
+        <section className="profile-shell profile-guest">
+          <div>
+            <p className="profile-kicker">Аккаунт</p>
+            <h1>Войдите, чтобы открыть профиль</h1>
+            <p>
+              Здесь будут ваши данные, записи на услуги и настройки безопасности.
             </p>
-            <button
-              type="button"
-              className="btn-edit"
-              onClick={() => navigate("/LogIn")}
-              style={{ marginTop: "1.5rem" }}
-            >
-              Go to Login
-            </button>
           </div>
-        </div>
-      </div>
+          <button type="button" className="profile-primary-button" onClick={() => navigate("/LogIn")}>
+            Войти
+          </button>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div className="profile-page">
-      <div className="profile-container">
-        <h1>My Profile</h1>
+    <main className="profile-page">
+      <div className="profile-shell">
+        <section className="profile-hero">
+          <div className="profile-avatar" aria-hidden="true">
+            {getInitials(user)}
+          </div>
 
-        {error && <div className="error-message">{error}</div>}
-        {successMessage && (
-          <div className="success-message">{successMessage}</div>
+          <div className="profile-hero-copy">
+            <p className="profile-kicker">Личный кабинет</p>
+            <h1>{displayName}</h1>
+            <p>@{user.userName || "user"}</p>
+          </div>
+
+          <div className="profile-hero-actions">
+            <button
+              type="button"
+              className="profile-secondary-button"
+              onClick={() => navigate("/lab")}
+            >
+              Записаться
+            </button>
+            <button type="button" className="profile-ghost-button" onClick={handleLogout}>
+              Выйти
+            </button>
+          </div>
+        </section>
+
+        {(error || successMessage) && (
+          <div className={`profile-message ${error ? "is-error" : "is-success"}`}>
+            {error || successMessage}
+          </div>
         )}
 
-        {/* User Info Section */}
-        <div className="profile-section">
-          <h2>Account Information</h2>
+        <section className="profile-stats" aria-label="Сводка профиля">
+          <div>
+            <span>{upcomingBookings}</span>
+            <p>Активные записи</p>
+          </div>
+          <div>
+            <span>{user.phone ? "Да" : "Нет"}</span>
+            <p>Телефон</p>
+          </div>
+          <div>
+            <span>{formatDate(user.createdAt)}</span>
+            <p>Дата регистрации</p>
+          </div>
+        </section>
 
-          {isEditing ? (
-            <form className="profile-form" onSubmit={handleUpdateProfile}>
-              <div className="form-group">
-                <label htmlFor="username">Username</label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={profileData.username}
-                  onChange={handleProfileChange}
-                  required
-                />
+        <div className="profile-grid">
+          <section className="profile-panel profile-account-panel">
+            <div className="profile-panel-header">
+              <div>
+                <p className="profile-kicker">Данные из БД</p>
+                <h2>Профиль</h2>
               </div>
-
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={profileData.email}
-                  onChange={handleProfileChange}
-                  required
-                />
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save Changes"}
-                </button>
+              {!isEditing && (
                 <button
                   type="button"
-                  className="btn-secondary"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setProfileData({
-                      username: user.username || "",
-                      email: user.email || "",
-                    });
-                  }}
+                  className="profile-ghost-button"
+                  onClick={() => setIsEditing(true)}
                 >
-                  Cancel
+                  Изменить
                 </button>
-              </div>
-            </form>
-          ) : (
-            <div className="profile-info">
-              <div className="info-item">
-                <span className="info-label">Username:</span>
-                <span className="info-value">{user?.username}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Email:</span>
-                <span className="info-value">{user?.email}</span>
-              </div>
-              <button
-                type="button"
-                className="btn-edit"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit Profile
-              </button>
+              )}
             </div>
-          )}
+
+            {isEditing ? (
+              <form className="profile-form" onSubmit={handleUpdateProfile}>
+                <div className="profile-form-grid">
+                  <label>
+                    Имя
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={profileData.firstName}
+                      onChange={handleProfileChange}
+                    />
+                  </label>
+                  <label>
+                    Фамилия
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={profileData.lastName}
+                      onChange={handleProfileChange}
+                    />
+                  </label>
+                  <label>
+                    Логин
+                    <input
+                      type="text"
+                      name="userName"
+                      value={profileData.userName}
+                      onChange={handleProfileChange}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Email
+                    <input
+                      type="email"
+                      name="email"
+                      value={profileData.email}
+                      onChange={handleProfileChange}
+                      required
+                    />
+                  </label>
+                  <label className="profile-form-wide">
+                    Телефон
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={profileData.phone}
+                      onChange={handleProfileChange}
+                    />
+                  </label>
+                </div>
+                <div className="profile-form-actions">
+                  <button type="submit" className="profile-primary-button" disabled={saving}>
+                    {saving ? "Сохраняем..." : "Сохранить"}
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-ghost-button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      applyUser(user);
+                    }}
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="profile-details">
+                <div>
+                  <span>Имя</span>
+                  <strong>{displayName}</strong>
+                </div>
+                <div>
+                  <span>Логин</span>
+                  <strong>@{user.userName || "Не указан"}</strong>
+                </div>
+                <div>
+                  <span>Email</span>
+                  <strong>{user.email || "Не указан"}</strong>
+                </div>
+                <div>
+                  <span>Телефон</span>
+                  <strong>{user.phone || "Не указан"}</strong>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="profile-panel profile-security-panel">
+            <div className="profile-panel-header">
+              <div>
+                <p className="profile-kicker">Безопасность</p>
+                <h2>Пароль</h2>
+              </div>
+            </div>
+
+            {isChangingPassword ? (
+              <form className="profile-form" onSubmit={handleChangePassword}>
+                <label>
+                  Текущий пароль
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                    required
+                  />
+                </label>
+                <label>
+                  Новый пароль
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    required
+                  />
+                </label>
+                <label>
+                  Повторите пароль
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    required
+                  />
+                </label>
+                <div className="profile-form-actions">
+                  <button type="submit" className="profile-primary-button" disabled={saving}>
+                    {saving ? "Меняем..." : "Обновить пароль"}
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-ghost-button"
+                    onClick={() => setIsChangingPassword(false)}
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p className="profile-panel-text">
+                  Регулярно обновляйте пароль, особенно если входили с чужого устройства.
+                </p>
+                <button
+                  type="button"
+                  className="profile-secondary-button"
+                  onClick={() => setIsChangingPassword(true)}
+                >
+                  Сменить пароль
+                </button>
+              </>
+            )}
+          </section>
         </div>
 
-        {/* My Bookings Section */}
-        <div className="profile-section bookings-section">
-          <h2>My Bookings</h2>
+        <section className="profile-panel profile-bookings-panel">
+          <div className="profile-panel-header">
+            <div>
+              <p className="profile-kicker">Записи</p>
+              <h2>Мои бронирования</h2>
+            </div>
+            <button
+              type="button"
+              className="profile-secondary-button"
+              onClick={() => navigate("/lab")}
+            >
+              Новая запись
+            </button>
+          </div>
 
           {bookingsLoading ? (
-            <p className="bookings-loading">Loading bookings...</p>
+            <p className="profile-empty">Загружаем записи...</p>
           ) : bookings.length === 0 ? (
-            <div className="no-bookings">
-              <span className="no-bookings-icon">📅</span>
-              <p>No bookings yet</p>
-              <button
-                type="button"
-                className="btn-book"
-                onClick={() => navigate("/lab")}
-              >
-                Browse Services
-              </button>
+            <div className="profile-empty">
+              <h3>Записей пока нет</h3>
+              <p>Выберите услугу и удобное время, запись появится здесь.</p>
             </div>
           ) : (
-            <div className="bookings-list">
-              {bookings.map((booking) => {
-                const isActive =
-                  booking.status === "confirmed" ||
-                  booking.status === "pending";
-
-                return (
-                  <div
-                    key={booking.id}
-                    className={`booking-card ${booking.status}`}
-                  >
-                    <div className="booking-card-glow" />
-                    <div className="booking-header">
-                      <div className="booking-service-info">
-                        <div>
-                          <h3 className="booking-service-name">
-                            {booking.serviceName || "Unknown Service"}
-                          </h3>
-                          <p className="booking-specialist">
-                            {booking.specialist || "Специалист не указан"}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`booking-status ${booking.status}`}>
-                        {booking.status}
-                      </span>
-                    </div>
-
-                    <div className="booking-details">
-                      <div className="booking-detail">
-                        <span className="detail-label">📅 Date</span>
-                        <span className="detail-value">
-                          {new Date(booking.date).toLocaleDateString("ru-RU", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </div>
-                      <div className="booking-detail">
-                        <span className="detail-label">🕐 Time</span>
-                        <span className="detail-value">{booking.time}</span>
-                      </div>
-                      <div className="booking-detail">
-                        <span className="detail-label">⏱ Duration</span>
-                        <span className="detail-value">
-                          {booking.duration}
-                        </span>
-                      </div>
-                      <div className="booking-detail">
-                        <span className="detail-label">💰 Price</span>
-                        <span className="detail-value price-value">
-                          {booking.price} руб
-                        </span>
-                      </div>
-                    </div>
-
-                    {isActive && (
+            <div className="profile-bookings-list">
+              {bookings.map((booking) => (
+                <article key={booking.id} className={`profile-booking is-${booking.status}`}>
+                  <div>
+                    <p className="profile-booking-date">{formatDate(booking.date)}</p>
+                    <h3>{booking.serviceName}</h3>
+                    <p>{booking.specialist || "Специалист не указан"}</p>
+                  </div>
+                  <div className="profile-booking-meta">
+                    <span>{booking.time}</span>
+                    <span>{booking.duration}</span>
+                    {booking.price && <span>{booking.price} ₽</span>}
+                  </div>
+                  <div className="profile-booking-actions">
+                    <span className="profile-status">{booking.status}</span>
+                    {isActiveBooking(booking) && (
                       <button
                         type="button"
-                        className="btn-cancel-booking"
+                        className="profile-danger-button"
                         onClick={() => handleCancelBooking(booking.id)}
                       >
-                        Cancel Booking
+                        Отменить
                       </button>
                     )}
                   </div>
-                );
-              })}
+                </article>
+              ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Password Change Section */}
-        <div className="profile-section">
-          <h2>Security</h2>
-
-          {isChangingPassword ? (
-            <form className="profile-form" onSubmit={handleChangePassword}>
-              <div className="form-group">
-                <label htmlFor="currentPassword">Current Password</label>
-                <input
-                  type="password"
-                  id="currentPassword"
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="newPassword">New Password</label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm New Password</label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  required
-                />
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" disabled={loading}>
-                  {loading ? "Changing..." : "Change Password"}
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => {
-                    setIsChangingPassword(false);
-                    setPasswordData({
-                      currentPassword: "",
-                      newPassword: "",
-                      confirmPassword: "",
-                    });
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              type="button"
-              className="btn-edit"
-              onClick={() => setIsChangingPassword(true)}
-            >
-              Change Password
-            </button>
-          )}
-        </div>
-
-        {/* Account Actions */}
-        <div className="profile-section profile-actions">
-          <button type="button" className="btn-logout" onClick={handleLogout}>
-            Logout
-          </button>
-
+        <section className="profile-danger-zone">
+          <div>
+            <h2>Удаление аккаунта</h2>
+            <p>Это удалит профиль и завершит текущую сессию.</p>
+          </div>
           <button
             type="button"
-            className="btn-delete"
+            className="profile-danger-button"
             onClick={handleDeleteAccount}
-            disabled={loading}
+            disabled={saving}
           >
-            Delete Account
+            Удалить аккаунт
           </button>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

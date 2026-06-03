@@ -73,30 +73,8 @@ export default function LabPage() {
   }, []);
 
   const handleCategoryChange = (newCategory) => {
-    if (isAnimating) return;
     if (newCategory === activeCategory) return;
-
-    setIsAnimating(true);
     setActiveCategory(newCategory);
-
-    gsap.killTweensOf(productRefs.current);
-
-    gsap.to(productRefs.current, {
-      opacity: 0,
-      scale: 0.5,
-      duration: 0.25,
-      stagger: 0.05,
-      ease: "power3.out",
-      onComplete: () => {
-        const filtered = allServices.filter((service) => {
-          const matchesCategory = newCategory === "all" ? true : String(service.category) === String(newCategory);
-          const matchesQuery = !searchQuery ? true : service.name.toLowerCase().includes(searchQuery.toLowerCase());
-          return matchesCategory && matchesQuery;
-        });
-
-        setFilteredServices(filtered);
-      },
-    });
   };
 
   const handleSearchChange = (e) => {
@@ -104,23 +82,35 @@ export default function LabPage() {
   };
 
   useEffect(() => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    gsap.killTweensOf(productRefs.current);
+    if (allServices.length === 0) {
+      setFilteredServices([]);
+      setIsAnimating(false);
+      return;
+    }
 
-    gsap.to(productRefs.current, {
+    const filtered = allServices.filter((service) => {
+      const matchesCategory = activeCategory === "all" ? true : String(service.category) === String(activeCategory);
+      const matchesQuery = !debouncedQuery ? true : service.name.toLowerCase().includes(debouncedQuery.toLowerCase());
+      return matchesCategory && matchesQuery;
+    });
+
+    const visibleRefs = productRefs.current.filter(Boolean);
+    if (isInitialMount.current || visibleRefs.length === 0) {
+      setFilteredServices(filtered);
+      setIsAnimating(false);
+      return;
+    }
+
+    setIsAnimating(true);
+    gsap.killTweensOf(visibleRefs);
+
+    gsap.to(visibleRefs, {
       opacity: 0,
       scale: 0.5,
       duration: 0.18,
       stagger: 0.03,
       ease: "power3.out",
       onComplete: () => {
-        const filtered = allServices.filter((service) => {
-          const matchesCategory = activeCategory === "all" ? true : String(service.category) === String(activeCategory);
-          const matchesQuery = !debouncedQuery ? true : service.name.toLowerCase().includes(debouncedQuery.toLowerCase());
-          return matchesCategory && matchesQuery;
-        });
-
         setFilteredServices(filtered);
       },
     });
@@ -150,6 +140,9 @@ export default function LabPage() {
   const handleServiceClick = (serviceId) => {
     navigate(`/lab/${serviceId}`);
   };
+
+  const activeCategoryName =
+    categories.find((category) => category.id === activeCategory)?.name || "Все услуги";
 
   return (
     <div className="lab-page">
@@ -212,12 +205,13 @@ export default function LabPage() {
       <section className="services-header">
         <div className="container">
           <Copy animateOnScroll={false} delay={0.65}>
-            <h1>Wardrobe Circulation</h1>
+            <h1>Услуги</h1>
           </Copy>
           <div className="services-header-divider"></div>
           <div className="service-filter-bar">
             <div className="filter-bar-header">
-              <p className="bodyCopy">Filters</p>
+              <span>Каталог</span>
+              <p className="bodyCopy">{activeCategoryName}</p>
             </div>
             <div className="filter-bar-search">
               <input
@@ -226,27 +220,21 @@ export default function LabPage() {
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
+              <div className="filter-bar-count">
+                {filteredServices.length}
+              </div>
             </div>
             <div className="filter-bar-tags">
               {categories.map((category) => (
-                <p
+                <button
+                  type="button"
                   key={category.id}
                   className={`bodyCopy ${activeCategory === category.id ? "active" : ""}`}
                   onClick={() => handleCategoryChange(category.id)}
+                  disabled={isAnimating}
                 >
                   {category.name}
-                </p>
-              ))}
-            </div>
-            <div className="filter-bar-colors">
-              {categories.slice(1).map((category) => (
-                <span
-                  key={category.id}
-                  className={`color-selector ${category.styleKey || "generic"} ${activeCategory === category.id ? "active" : ""}`}
-                  onClick={() => handleCategoryChange(category.id)}
-                  style={{ cursor: isAnimating ? "not-allowed" : "pointer" }}
-                  title={category.name}
-                ></span>
+                </button>
               ))}
             </div>
           </div>
