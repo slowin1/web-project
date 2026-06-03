@@ -1,6 +1,0 @@
-**/obj/
-**/bin/
-.idea/
-.vtcode/
-vtcode.toml
-eUseControl.Api/appsettings.json
