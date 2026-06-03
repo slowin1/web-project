@@ -3,14 +3,17 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ContactPage from "./pages/ContactPage";
 import LabPage from "./pages/LabPage";
 import UnitPage from "./pages/UnitPage";
+import SpecialistPage from "./pages/SpecialistPage";
 import ProjectPage from "./pages/ProjectPage";
 import WorkPage from "./pages/WorkPage";
 import WorkPages from "./pages/WorkPages";
 import Layout from "./components/Layout";
 import LogIn from "./pages/LogIn";
 import ProfilePage from "./pages/Profile";
-import AdminPage from "./pages/Admin";
 import ForgotPassword from "./pages/ForgotPassword";
+import Register from "./pages/Register";
+import { AdminContent, AdminDashboard, AdminSettings, AdminServices, AdminUsers } from "./pages/Admin";
+import AdminLayout from "./components/Admin/AdminLayout";
 
 
 const HOME_MODULES = [
@@ -144,11 +147,76 @@ function usePageRuntime({ title, modulePaths, clearOverflow = false }) {
   }, [clearOverflow, modulePaths, title]);
 }
 
-function RoutedPage({ component: Component, title, modulePaths, clearOverflow }) {
+function RoutedPage({
+  component: Component,
+  title,
+  modulePaths,
+  clearOverflow,
+}) {
   usePageRuntime({ title, modulePaths, clearOverflow });
 
   return <Component />;
 }
+
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function isAdminSession() {
+  const token = localStorage.getItem("authToken") || localStorage.getItem("adminToken");
+  const user = getStoredUser();
+  if (!token) return false;
+
+  // Prefer role from stored user
+  if (user?.role !== undefined && user?.role !== null) {
+    const r = String(user.role).toLowerCase();
+    // Accept both numeric and string roles
+    if (r === "4" || r === "admin") return true;
+  }
+
+  // Fallback: parse role claim from JWT
+  try {
+    const payloadBase64 = token.split(".")[1];
+    const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson);
+
+    const roleClaim = payload?.role ?? payload?.Role;
+    if (roleClaim === 4 || roleClaim === "4") return true;
+    if (typeof roleClaim === "string" && roleClaim.toLowerCase() === "admin") return true;
+  } catch (e) {
+    // ignore
+  }
+
+  return false;
+}
+
+
+function AdminRoute() {
+  if (!isAdminSession()) {
+    return <Navigate to="/LogIn" replace />;
+  }
+
+  return <AdminRuntime />;
+}
+
+function AdminRuntime() {
+  usePageRuntime({
+    title: "Admin",
+    modulePaths: ADMIN_MODULES,
+    clearOverflow: true,
+  });
+
+  return (
+    <Layout>
+      <AdminLayout />
+    </Layout>
+  );
+}
+
 
 function HomePage() {
   const modulesLoadedRef = React.useRef(false);
@@ -232,7 +300,7 @@ function HomePage() {
               data-animate-on-scroll="false"
               data-animate-delay="1"
             >
-              [ Engineered by clavik ]
+              [ Engineered by Славик Нагорянский ]
             </p>
           </div>
         </div>
@@ -266,9 +334,33 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout><HomePage /></Layout>} />
-        <Route path="/index" element={<Layout><HomePage /></Layout>} />
-        <Route path="/index.html" element={<Layout><HomePage /></Layout>} />
+        <Route
+          path="/"
+          element={
+            <Layout>
+              {/* If admin: send to /admin to avoid profile/admin route conflicts */}
+              {isAdminSession() ? <Navigate to="/admin" replace /> : <HomePage />}
+            </Layout>
+          }
+        />
+
+
+        <Route
+          path="/index"
+          element={
+            <Layout>
+              <HomePage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/index.html"
+          element={
+            <Layout>
+              <HomePage />
+            </Layout>
+          }
+        />
         <Route
           path="/lab"
           element={
@@ -277,6 +369,19 @@ function App() {
                 title="Lab"
                 modulePaths={LAB_MODULES}
                 component={LabPage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/lab/specialists"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Specialists"
+                modulePaths={LAB_MODULES}
+                component={SpecialistPage}
                 clearOverflow
               />
             </Layout>
@@ -360,47 +465,55 @@ function App() {
             </Layout>
           }
         />
-          <Route
-            path="/profile"
-            element={
-              <Layout>
-                <RoutedPage
-                  title="Profile"
-                  modulePaths={PROFILE_MODULES}
-                  component={ProfilePage}
-                  clearOverflow
-                />
-              </Layout>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <Layout>
-                <RoutedPage
-                  title="Admin"
-                  modulePaths={ADMIN_MODULES}
-                  component={AdminPage}
-                  clearOverflow
-                />
-              </Layout>
-            }
-          />
-           <Route
-            path="/forgot-password"
-            element={
-              <Layout>
-                <RoutedPage
-                  title="ForgotPassword"
-                  modulePaths={FORGOT_PASSWORD_MODULES}
-                  component={ForgotPassword}
-                  clearOverflow
-                />
-              </Layout>
-            }
-          />
+        <Route
+          path="/profile"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Profile"
+                modulePaths={PROFILE_MODULES}
+                component={ProfilePage}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="services" element={<AdminServices />} />
+          <Route path="content" element={<AdminContent />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+        <Route
+          path="/forgot-password"
+          element={
+            <Layout>
+              <RoutedPage
+                title="ForgotPassword"
+                modulePaths={FORGOT_PASSWORD_MODULES}
+                component={ForgotPassword}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
+        <Route
+          path="/Register"
+          element={
+            <Layout>
+              <RoutedPage
+                title="Register"
+                modulePaths={LOG_IN_MODULES}
+                component={Register}
+                clearOverflow
+              />
+            </Layout>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </Routes>{" "}
     </BrowserRouter>
   );
 }

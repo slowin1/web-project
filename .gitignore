@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 node_modules/
 
@@ -28,3 +29,11 @@ yarn-error.log*
 
 # Vite
 .vite/
+=======
+.DS_Store
+backend/
+backend/
+>>>>>>> origin/main
+
+node_modules/
+.DS_Store

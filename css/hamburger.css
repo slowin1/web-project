@@ -15,7 +15,8 @@
   align-items: center;
   gap: 0.25rem;
   cursor: pointer;
-  z-index: 100;
+  z-index: 20001;
+  pointer-events: auto;
 }
 
 .menu-toggle-btn .hamburger-bar {
@@ -34,7 +35,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  z-index: 100;
+  z-index: 20002;
 }
 
 .menu-bg {

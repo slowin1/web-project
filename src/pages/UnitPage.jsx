@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
 import Product from "../components/Product/Product";
-import { massageServices } from "../data/massageServices";
+import ServiceBooking from "../components/ServiceBooking/ServiceBooking";
+import { fetchCatalogBundle } from "../api/catalog";
 import "../../css/unit.css";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -11,22 +12,68 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
 export default function UnitPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const heroRef = useRef(null);
   const activeMinimapIndex = useRef(0);
+  const [services, setServices] = useState([]);
+  const [currentService, setCurrentService] = useState(null);
   const [relatedServices, setRelatedServices] = useState([]);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
-  const currentService = massageServices.find(
-    (s) => s.id === parseInt(id)
-  ) || massageServices[0];
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function loadCatalog() {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const data = await fetchCatalogBundle();
+        if (!isMounted) return;
+        setServices(data.services);
+      } catch (error) {
+        console.error("Failed to load service:", error);
+        if (!isMounted) return;
+        setServices([]);
+        setLoadError("Не удалось загрузить услугу");
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (services.length === 0) {
+      setCurrentService(null);
+      setRelatedServices([]);
+      return;
+    }
+
+    const selectedService = services.find((service) => String(service.id) === String(id));
+    const activeService = selectedService || services[0];
+    setCurrentService(activeService);
+
     window.scrollTo(0, 0);
 
-    const shuffled = [...massageServices]
-      .filter((s) => s.id !== currentService.id)
+    const shuffled = [...services]
+      .filter((s) => s.id !== activeService.id)
       .sort(() => 0.5 - Math.random());
     setRelatedServices(shuffled.slice(0, 4));
 
@@ -35,7 +82,7 @@ export default function UnitPage() {
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [id, currentService.id]);
+  }, [id, services]);
 
   useEffect(() => {
     const handleScrollToTop = () => {
@@ -55,9 +102,13 @@ export default function UnitPage() {
   useGSAP(() => {
     const snapshots = document.querySelectorAll(".service-snapshot");
     const minimapImages = document.querySelectorAll(
-      ".service-snapshot-minimap-img"
+      ".service-snapshot-minimap-img",
     );
     const totalImages = snapshots.length;
+
+    if (totalImages === 0) {
+      return;
+    }
 
     gsap.set(snapshots[0], { y: "0%", scale: 1 });
     gsap.set(minimapImages[0], { scale: 1.25 });
@@ -129,47 +180,169 @@ export default function UnitPage() {
   }, []);
 
   const handleBookNow = () => {
-    alert(`Запись на процедуру: ${currentService.name}\nСпециалист: ${currentService.specialist}`);
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      navigate("/LogIn");
+      return;
+    }
+
+    // Открываем модальное окно с календарем
+    setShowBookingModal(true);
   };
 
   const handleSaveService = () => {
     alert(`Услуга "${currentService.name}" сохранена в избранное`);
   };
 
+  if (isLoading) {
+    return (
+      <div className="unit-page">
+        <section className="service-details">
+          <div className="service-col service-col-copy">
+            <p className="bodyCopy lg">Загрузка услуги...</p>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!currentService) {
+    return (
+      <div className="unit-page">
+        <section className="service-details">
+          <div className="service-col service-col-copy">
+            <p className="bodyCopy lg">{loadError || "Услуга не найдена"}</p>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="unit-page">
+      {bookingSuccess && (
+        <div className="booking-notification success">
+          <span>✓</span>
+          <div>
+            <strong>Booking confirmed!</strong>
+            <p>Check your profile for details</p>
+          </div>
+        </div>
+      )}
+      {bookingError && (
+        <div className="booking-notification error">
+          <span>✕</span>
+          <div>
+            <strong>Booking failed</strong>
+            <p>{bookingError}</p>
+          </div>
+        </div>
+      )}
       <section className="service-hero" ref={heroRef}>
         <div className="service-hero-col service-snapshots">
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot">
-            <img src={currentService.image} alt={currentService.name} onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop'; }} />
+            <img
+              src={currentService.image}
+              alt={currentService.name}
+              onError={(e) => {
+                e.target.src =
+                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
+              }}
+            />
           </div>
           <div className="service-snapshot-minimap">
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
             <div className="service-snapshot-minimap-img">
-              <img src={currentService.minimap} alt="" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop'; }} />
+              <img
+                src={currentService.minimap}
+                alt=""
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                }}
+              />
             </div>
           </div>
         </div>
@@ -182,7 +355,14 @@ export default function UnitPage() {
             <div className="service-meta-header-divider"></div>
             <div className="service-specialist-container">
               <p className="md">Specialist</p>
-              <p className="bodyCopy">{currentService.specialist}</p>
+              <p className="bodyCopy">
+                <Link
+                  to={`/lab/specialists?specialist=${currentService.specialistSlug}`}
+                  className="service-specialist-link"
+                >
+                  {currentService.specialist}
+                </Link>
+              </p>
             </div>
             <div className="service-duration-container">
               <p className="md">Duration</p>
@@ -248,6 +428,23 @@ export default function UnitPage() {
           </div>
         </div>
       </section>
+
+      {showBookingModal && (
+        <div className="booking-modal-overlay" onClick={() => setShowBookingModal(false)}>
+          <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="booking-modal-close"
+              onClick={() => setShowBookingModal(false)}
+            >
+              ✕
+            </button>
+            <ServiceBooking
+              service={currentService}
+              onClose={() => setShowBookingModal(false)}
+            />
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

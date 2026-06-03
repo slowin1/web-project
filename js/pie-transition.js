@@ -49,9 +49,10 @@ function createSVG() {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: min(80vw, 80vh);
-    height: min(80vw, 80vh);
+    width: min(50vw, 50vh);
+    height: min(50vw, 50vh);
     overflow: visible;
+
   `;
   STATE.svg = svg;
   STATE.container.appendChild(svg);
@@ -127,8 +128,9 @@ function createPie() {
   );
   solidCircle.setAttribute("cx", "400");
   solidCircle.setAttribute("cy", "400");
-  solidCircle.setAttribute("r", "302");
+  solidCircle.setAttribute("r", "250");
   solidCircle.setAttribute("fill", pieColor);
+
   solidCircle.setAttribute("mask", "url(#pie-transition-mask)");
 
   pieGroup.appendChild(solidCircle);
@@ -146,7 +148,11 @@ function setupHeader() {
     wordsClass: "pie-transition-word",
   });
 
-  gsap.set(STATE.headerSplit.words, { opacity: 0 });
+  const words = STATE.headerSplit?.words;
+  if (words && words.length) {
+    gsap.set(words, { opacity: 0 });
+  }
+
 }
 
 // scroll-driven animation
@@ -181,21 +187,31 @@ function setupScrollTrigger() {
 
       // header reveal (75-95%)
       if (STATE.headerSplit && STATE.headerSplit.words.length > 0) {
-        if (progress >= 0.75 && progress <= 0.95) {
+    if (progress >= 0.75 && progress <= 0.95) {
           const textProgress = (progress - 0.75) / 0.2;
-          const totalWords = STATE.headerSplit.words.length;
+          const words = STATE.headerSplit?.words;
+          const totalWords = words?.length || 0;
 
-          STATE.headerSplit.words.forEach((word, index) => {
-            const wordRevealProgress = index / totalWords;
-            gsap.set(word, {
-              opacity: textProgress >= wordRevealProgress ? 1 : 0,
+          if (totalWords) {
+            words.forEach((word, index) => {
+              const wordRevealProgress = index / totalWords;
+              gsap.set(word, {
+                opacity: textProgress >= wordRevealProgress ? 1 : 0,
+              });
             });
-          });
+          }
         } else if (progress < 0.75) {
-          gsap.set(STATE.headerSplit.words, { opacity: 0 });
+          const words = STATE.headerSplit?.words;
+          if (words && words.length) {
+            gsap.set(words, { opacity: 0 });
+          }
         } else if (progress > 0.95) {
-          gsap.set(STATE.headerSplit.words, { opacity: 1 });
+          const words = STATE.headerSplit?.words;
+          if (words && words.length) {
+            gsap.set(words, { opacity: 1 });
+          }
         }
+
       }
     },
   });
@@ -211,14 +227,16 @@ function updatePieFill(progress) {
     return;
   }
 
+  const radius = 250;
+
   if (angle >= 360) {
     slice.setAttribute(
       "d",
       `
       M 400,400
-      m -302,0
-      a 302,302 0 1,0 604,0
-      a 302,302 0 1,0 -604,0
+      m -${radius},0
+      a ${radius},${radius} 0 1,0 ${radius * 2},0
+      a ${radius},${radius} 0 1,0 -${radius * 2},0
     `,
     );
     return;
@@ -226,10 +244,11 @@ function updatePieFill(progress) {
 
   const startAngle = -90;
   const endAngle = startAngle + angle;
-  const x1 = 400 + 302 * Math.cos((startAngle * Math.PI) / 180);
-  const y1 = 400 + 302 * Math.sin((startAngle * Math.PI) / 180);
-  const x2 = 400 + 302 * Math.cos((endAngle * Math.PI) / 180);
-  const y2 = 400 + 302 * Math.sin((endAngle * Math.PI) / 180);
+  const x1 = 400 + radius * Math.cos((startAngle * Math.PI) / 180);
+  const y1 = 400 + radius * Math.sin((startAngle * Math.PI) / 180);
+  const x2 = 400 + radius * Math.cos((endAngle * Math.PI) / 180);
+  const y2 = 400 + radius * Math.sin((endAngle * Math.PI) / 180);
+
   const largeArc = angle > 180 ? 1 : 0;
 
   slice.setAttribute(
@@ -237,10 +256,11 @@ function updatePieFill(progress) {
     `
     M 400,400
     L ${x1},${y1}
-    A 302,302 0 ${largeArc} 1 ${x2},${y2}
+    A ${radius},${radius} 0 ${largeArc} 1 ${x2},${y2}
     Z
   `,
   );
+
 }
 
 // resize handler

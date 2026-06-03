@@ -3,16 +3,77 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
 import Product from "../components/Product/Product";
-import { massageServices, categories } from "../data/massageServices";
+import { fetchCatalogBundle } from "../api/catalog";
 import "../../css/wardrobe.css";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+
 export default function LabPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("all");
+<<<<<<< HEAD
   const [filteredServices, setFilteredServices] = useState(massageServices);
+=======
+  const [allServices, setAllServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
+  const [categories, setCategories] = useState([{ id: "all", name: "Все услуги", styleKey: "all" }]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 250);
+>>>>>>> origin/main
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const productRefs = useRef([]);
   const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // ensure ScrollTrigger and external GSAP modules re-calc after React renders
+    requestAnimationFrame(() => {
+      try {
+        ScrollTrigger.refresh(true);
+      } catch {}
+    });
+
+    async function loadCatalog() {
+
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const data = await fetchCatalogBundle();
+        if (!isMounted) return;
+
+        setAllServices(data.services);
+        setFilteredServices(data.services);
+        setCategories([
+          { id: "all", name: "Все услуги", styleKey: "all" },
+          ...data.categories,
+        ]);
+      } catch (error) {
+        console.error("Failed to load services:", error);
+        if (!isMounted) return;
+
+        setAllServices([]);
+        setFilteredServices([]);
+        setLoadError("Не удалось загрузить услуги");
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleCategoryChange = (newCategory) => {
     if (isAnimating) return;
@@ -30,9 +91,16 @@ export default function LabPage() {
       stagger: 0.05,
       ease: "power3.out",
       onComplete: () => {
+<<<<<<< HEAD
         const filtered = massageServices.filter((service) => {
           if (newCategory === "all") return true;
           return service.category === newCategory;
+=======
+        const filtered = allServices.filter((service) => {
+          const matchesCategory = newCategory === "all" ? true : String(service.category) === String(newCategory);
+          const matchesQuery = !searchQuery ? true : service.name.toLowerCase().includes(searchQuery.toLowerCase());
+          return matchesCategory && matchesQuery;
+>>>>>>> origin/main
         });
 
         setFilteredServices(filtered);
@@ -40,6 +108,36 @@ export default function LabPage() {
     });
   };
 
+<<<<<<< HEAD
+=======
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  useEffect(() => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    gsap.killTweensOf(productRefs.current);
+
+    gsap.to(productRefs.current, {
+      opacity: 0,
+      scale: 0.5,
+      duration: 0.18,
+      stagger: 0.03,
+      ease: "power3.out",
+      onComplete: () => {
+        const filtered = allServices.filter((service) => {
+          const matchesCategory = activeCategory === "all" ? true : String(service.category) === String(activeCategory);
+          const matchesQuery = !debouncedQuery ? true : service.name.toLowerCase().includes(debouncedQuery.toLowerCase());
+          return matchesCategory && matchesQuery;
+        });
+
+        setFilteredServices(filtered);
+      },
+    });
+  }, [debouncedQuery, activeCategory, allServices]);
+
+>>>>>>> origin/main
   useEffect(() => {
     productRefs.current = productRefs.current.slice(0, filteredServices.length);
     gsap.killTweensOf(productRefs.current);
@@ -148,7 +246,7 @@ export default function LabPage() {
               {categories.slice(1).map((category) => (
                 <span
                   key={category.id}
-                  className={`color-selector ${category.id} ${activeCategory === category.id ? "active" : ""}`}
+                  className={`color-selector ${category.styleKey || "generic"} ${activeCategory === category.id ? "active" : ""}`}
                   onClick={() => handleCategoryChange(category.id)}
                   style={{ cursor: isAnimating ? "not-allowed" : "pointer" }}
                   title={category.name}
@@ -161,6 +259,11 @@ export default function LabPage() {
 
       <section className="services-list">
         <div className="container">
+          {isLoading && <p className="bodyCopy">Загрузка услуг...</p>}
+          {!isLoading && loadError && <p className="bodyCopy">{loadError}</p>}
+          {!isLoading && !loadError && filteredServices.length === 0 && (
+            <p className="bodyCopy">Услуги не найдены</p>
+          )}
           {filteredServices.map((service, index) => (
             <Product
               key={service.id}

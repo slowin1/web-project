@@ -16,10 +16,14 @@ import "/css/footer.css";
 import "/css/login.css";
 import "/css/forgot-password.css";
 import "/css/admin.css";
+<<<<<<< HEAD
 
+=======
+import "/css/profile.css";
+>>>>>>> origin/main
 
 createRoot(document.getElementById("root")).render(
   <ThemeProvider>
     <App />
-  </ThemeProvider>
+  </ThemeProvider>,
 );
