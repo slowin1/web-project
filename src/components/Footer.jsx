@@ -4,7 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function Footer() {
+export default function Footer({ className = "" }) {
   useEffect(() => {
     const footerContainer = document.querySelector(".footer-container");
     if (!footerContainer) return;
@@ -26,7 +26,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer>
+    <footer className={className}>
       <div className="footer-container">
         <div className="footer-content">
           <div className="footer-row">

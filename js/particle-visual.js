@@ -2,14 +2,14 @@ const PV = {
   config: {
     canvasBg: { light: "#E7E5E4", dark: "#E7E5E4" },
 
-    logoSize: 2000,
-    distortionRadius: 500,
-    maxDisplacement: 180,
+    logoSize: 1600,
+    distortionRadius: 460,
+    maxDisplacement: 150,
 
-    forceStrength: 0.15,
-    returnForce: 0.1,
+    forceStrength: 0.09,
+    returnForce: 0.13,
     logoPath: "/lab/hero-visual.png",
-    particleSpacing: 2,
+    particleSpacing: 1,
   },
   canvas: null,
   gl: null,
@@ -19,7 +19,7 @@ const PV = {
   posArray: null,
   colorArray: null,
   mouse: { x: 0, y: 0 },
-  execCount: 0,
+  activeFrames: 0,
   isMobile: false,
   animFrame: null,
   isAnimating: false,
@@ -28,12 +28,18 @@ const PV = {
 
 document.addEventListener("DOMContentLoaded", init);
 
+function getDpr() {
+  return Math.min(devicePixelRatio || 1, PV.isMobile ? 1 : 1.25);
+}
+
 function init() {
+  cleanup();
+
   PV.canvas = document.getElementById("particle-canvas");
   if (!PV.canvas) return;
 
   PV.isMobile = window.innerWidth < 1000;
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = getDpr();
 
   PV.canvas.width = innerWidth * dpr;
   PV.canvas.height = innerHeight * dpr;
@@ -73,7 +79,7 @@ function setupShaders() {
       vec2 clip = (a_position / u_resolution * 2.0 - 1.0) * vec2(1.0, -1.0);
       v_color = a_color;
       gl_Position = vec4(clip, 0.0, 1.0);
-      gl_PointSize = 3.0;
+      gl_PointSize = 1.8;
     }`;
 
   const fs = `
@@ -82,7 +88,7 @@ function setupShaders() {
     void main() {
       if (v_color.a < 0.01) discard;
       float dist = length(gl_PointCoord - 0.5);
-      float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+      float alpha = 1.0 - smoothstep(0.08, 0.5, dist);
       gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
     }`;
 
@@ -101,6 +107,11 @@ function setupShaders() {
 }
 
 function loadImage() {
+  if (!PV.config.logoPath) {
+    createProceduralParticleMask();
+    return;
+  }
+
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
@@ -115,7 +126,91 @@ function loadImage() {
 
     createParticles(ctx.getImageData(0, 0, logoSize, logoSize).data);
   };
+  img.onerror = createProceduralParticleMask;
   img.src = PV.config.logoPath;
+}
+
+function createProceduralParticleMask() {
+  const temp = document.createElement("canvas");
+  const ctx = temp.getContext("2d", { willReadFrequently: true });
+  const logoSize = PV.config.logoSize;
+  const center = logoSize / 2;
+
+  temp.width = temp.height = logoSize;
+  ctx.clearRect(0, 0, logoSize, logoSize);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  const drawCurve = (points, width, color) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let index = 1; index < points.length - 1; index += 1) {
+      const current = points[index];
+      const next = points[index + 1];
+      ctx.quadraticCurveTo(
+        current[0],
+        current[1],
+        (current[0] + next[0]) / 2,
+        (current[1] + next[1]) / 2,
+      );
+    }
+    ctx.stroke();
+  };
+
+  const scale = logoSize / 1000;
+  const toPx = (points) => points.map(([x, y]) => [x * scale, y * scale]);
+
+  drawCurve(
+    toPx([
+      [170, 640],
+      [260, 495],
+      [390, 420],
+      [520, 440],
+      [660, 462],
+      [790, 360],
+      [858, 220],
+    ]),
+    92 * scale,
+    "#d7d2cc",
+  );
+
+  drawCurve(
+    toPx([
+      [222, 760],
+      [340, 625],
+      [480, 578],
+      [626, 604],
+      [760, 552],
+      [890, 420],
+    ]),
+    64 * scale,
+    "#bfc7c8",
+  );
+
+  drawCurve(
+    toPx([
+      [286, 340],
+      [395, 270],
+      [505, 260],
+      [612, 314],
+      [725, 306],
+      [820, 236],
+    ]),
+    42 * scale,
+    "#ece5dc",
+  );
+
+  ctx.fillStyle = "#aeb8b8";
+  ctx.beginPath();
+  ctx.ellipse(center - 165 * scale, center + 70 * scale, 46 * scale, 70 * scale, -0.65, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(center + 214 * scale, center - 180 * scale, 42 * scale, 58 * scale, 0.72, 0, Math.PI * 2);
+  ctx.fill();
+
+  createParticles(ctx.getImageData(0, 0, logoSize, logoSize).data);
 }
 
 function computeScale() {
@@ -126,13 +221,13 @@ function computeScale() {
 }
 
 PV.getDistortionRadius = () => {
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = getDpr();
   const vmin = Math.min(innerWidth, innerHeight);
   return (vmin * PV.config.distortionRadius / 1000) * dpr;
 };
 
 PV.getMaxDisplacement = () => {
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = getDpr();
   const vmin = Math.min(innerWidth, innerHeight);
   return (vmin * PV.config.maxDisplacement / 1000) * dpr;
 };
@@ -140,7 +235,7 @@ PV.getMaxDisplacement = () => {
 function createParticles(pixels) {
   const cx = PV.canvas.width / 2;
   const cy = PV.canvas.height / 2;
-  const scale = computeScale() * Math.min(devicePixelRatio || 1, 2);
+  const scale = computeScale() * getDpr();
   const dim = PV.config.logoSize;
   const spacing = PV.config.particleSpacing;
 
@@ -181,69 +276,90 @@ function createParticles(pixels) {
   );
 
   PV.geometry = { posBuf, colBuf, count: PV.particles.length };
-  console.log(`Particles created: ${PV.particles.length}`);
-  animate();
+  render();
+}
+
+function startAnimation() {
+  if (PV.isAnimating) return;
+  PV.isAnimating = true;
+  PV.animFrame = requestAnimationFrame(animate);
 }
 
 function animate() {
-  PV.animFrame = requestAnimationFrame(animate);
+  if (!PV.isAnimating || !PV.geometry) return;
 
-  if (!PV.isMobile && PV.execCount > 0) {
-    PV.execCount--;
-    const rad = PV.getDistortionRadius() ** 2;
+  const rad = PV.getDistortionRadius() ** 2;
+  const maxDisp = PV.getMaxDisplacement();
+  const maxDispSq = maxDisp * maxDisp;
+  let needsUpdate = false;
+  let hasMotion = false;
 
-    let needsUpdate = false;
+  if (PV.activeFrames > 0) {
+    PV.activeFrames--;
+  }
 
-    for (let i = 0; i < PV.particles.length; i++) {
-      const x = PV.posArray[i * 2];
-      const y = PV.posArray[i * 2 + 1];
-      const p = PV.particles[i];
+  for (let i = 0; i < PV.particles.length; i++) {
+    const x = PV.posArray[i * 2];
+    const y = PV.posArray[i * 2 + 1];
+    const p = PV.particles[i];
+
+    if (!PV.isMobile && PV.activeFrames > 0) {
       const dx = PV.mouse.x - x;
       const dy = PV.mouse.y - y;
       const dis = dx * dx + dy * dy;
 
-      if (dis < rad && dis > 0) {
-        const f = -rad / dis;
-        const distOrig = Math.sqrt((x - p.ox) ** 2 + (y - p.oy) ** 2);
-        const mult = Math.max(
-          0.1,
-          1 - distOrig / (PV.getMaxDisplacement() * 2),
-        );
-        p.vx += f * Math.cos(Math.atan2(dy, dx)) * PV.config.forceStrength * mult;
-        p.vy += f * Math.sin(Math.atan2(dy, dx)) * PV.config.forceStrength * mult;
-        needsUpdate = true;
-      }
-
-      if (Math.abs(p.vx) > 0.01 || Math.abs(p.vy) > 0.01) {
-        const nx = x + (p.vx *= 0.82) + (p.ox - x) * PV.config.returnForce;
-        const ny = y + (p.vy *= 0.82) + (p.oy - y) * PV.config.returnForce;
-        const dox = nx - p.ox;
-        const doy = ny - p.oy;
-        const distOrig = Math.sqrt(dox * dox + doy * doy);
-
-        if (distOrig > PV.getMaxDisplacement()) {
-          const maxDisp = PV.getMaxDisplacement();
-          const s = maxDisp / distOrig;
-          const ds = s + (1 - s) * Math.exp(-(distOrig - PV.getMaxDisplacement()) * 0.02);
-          PV.posArray[i * 2] = p.ox + dox * ds;
-          PV.posArray[i * 2 + 1] = p.oy + doy * ds;
-          p.vx *= 0.7;
-          p.vy *= 0.7;
-        } else {
-          PV.posArray[i * 2] = nx;
-          PV.posArray[i * 2 + 1] = ny;
-        }
-        needsUpdate = true;
+      if (dis < rad && dis > 0.0001) {
+        const invDist = 1 / Math.sqrt(dis);
+        const distOrigSq = (x - p.ox) ** 2 + (y - p.oy) ** 2;
+        const mult = Math.max(0.1, 1 - Math.sqrt(distOrigSq) / (maxDisp * 2));
+        const force = (-rad / dis) * PV.config.forceStrength * mult;
+        p.vx += dx * invDist * force;
+        p.vy += dy * invDist * force;
+        hasMotion = true;
       }
     }
 
-    if (needsUpdate) {
-      PV.gl.bindBuffer(PV.gl.ARRAY_BUFFER, PV.geometry.posBuf);
-      PV.gl.bufferSubData(PV.gl.ARRAY_BUFFER, 0, PV.posArray);
+    const homeDx = x - p.ox;
+    const homeDy = y - p.oy;
+    const isAwayFromHome = homeDx * homeDx + homeDy * homeDy > 0.35;
+
+    if (Math.abs(p.vx) > 0.01 || Math.abs(p.vy) > 0.01 || isAwayFromHome) {
+      let nx = x + (p.vx *= 0.84) + (p.ox - x) * PV.config.returnForce;
+      let ny = y + (p.vy *= 0.84) + (p.oy - y) * PV.config.returnForce;
+      const dox = nx - p.ox;
+      const doy = ny - p.oy;
+      const distOrigSq = dox * dox + doy * doy;
+
+      if (distOrigSq > maxDispSq) {
+        const distOrig = Math.sqrt(distOrigSq);
+        const s = maxDisp / distOrig;
+        nx = p.ox + dox * s;
+        ny = p.oy + doy * s;
+        p.vx *= 0.65;
+        p.vy *= 0.65;
+      }
+
+      PV.posArray[i * 2] = nx;
+      PV.posArray[i * 2 + 1] = ny;
+      needsUpdate = true;
+      hasMotion = true;
     }
   }
 
+  if (needsUpdate) {
+    PV.gl.bindBuffer(PV.gl.ARRAY_BUFFER, PV.geometry.posBuf);
+    PV.gl.bufferSubData(PV.gl.ARRAY_BUFFER, 0, PV.posArray);
+  }
+
   render();
+
+  if (hasMotion || PV.activeFrames > 0) {
+    PV.animFrame = requestAnimationFrame(animate);
+    return;
+  }
+
+  PV.isAnimating = false;
+  PV.animFrame = null;
 }
 
 function render() {
@@ -279,10 +395,11 @@ function render() {
 
 function handleMouseMove(e) {
   const rect = PV.canvas.getBoundingClientRect();
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = getDpr();
   PV.mouse.x = (e.clientX - rect.left) * dpr;
   PV.mouse.y = (e.clientY - rect.top) * dpr;
-  PV.execCount = 300;
+  PV.activeFrames = 72;
+  startAnimation();
 }
 
 function handleResize() {
@@ -290,7 +407,7 @@ function handleResize() {
 
   PV.isMobile = innerWidth < 1000;
 
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = getDpr();
   PV.canvas.width = innerWidth * dpr;
   PV.canvas.height = innerHeight * dpr;
   PV.canvas.style.width = innerWidth + "px";
@@ -312,6 +429,7 @@ function handleResize() {
 
   PV.gl.bindBuffer(PV.gl.ARRAY_BUFFER, PV.geometry.posBuf);
   PV.gl.bufferSubData(PV.gl.ARRAY_BUFFER, 0, PV.posArray);
+  render();
 }
 
 function setupThemeListener() {
@@ -324,4 +442,28 @@ function setupThemeListener() {
   });
 
   PV.themeObserver.observe(document.documentElement, { attributes: true });
+}
+
+function cleanup() {
+  if (PV.animFrame) cancelAnimationFrame(PV.animFrame);
+  if (PV.themeObserver) PV.themeObserver.disconnect();
+
+  document.removeEventListener("mousemove", handleMouseMove);
+  window.removeEventListener("resize", handleResize);
+
+  if (PV.gl) {
+    if (PV.geometry?.posBuf) PV.gl.deleteBuffer(PV.geometry.posBuf);
+    if (PV.geometry?.colBuf) PV.gl.deleteBuffer(PV.geometry.colBuf);
+    if (PV.program) PV.gl.deleteProgram(PV.program);
+  }
+
+  PV.gl = null;
+  PV.program = null;
+  PV.geometry = null;
+  PV.particles = [];
+  PV.posArray = null;
+  PV.colorArray = null;
+  PV.animFrame = null;
+  PV.isAnimating = false;
+  PV.themeObserver = null;
 }

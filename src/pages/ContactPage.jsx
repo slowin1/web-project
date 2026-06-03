@@ -1,4 +1,45 @@
+import { useEffect, useState } from "react";
+import { CONTENT_TYPES, contentItemsAPI } from "../api/contentItems";
+
+const FALLBACK_CONTACT_ROWS = [
+  { id: "time", title: "Temporal", subtitle: "00:00 EST", isActive: true },
+  { id: "questions", title: "Email для вопросов", subtitle: "MassageSalon@gmail.com", isActive: true },
+  { id: "phone", title: "Телефон", subtitle: "+373 123 456", isActive: true },
+  { id: "support", title: "Техническая поддержка", subtitle: "MassagesalonTech@gmail.com", isActive: true },
+  { id: "address", title: "Адрес", subtitle: "Chisinau, Moldova", isActive: true },
+  { id: "collab", title: "Рекламные предложения", subtitle: "MassageSalonCollab@gmail.com", isActive: true },
+  { id: "dev", title: "Разработка", subtitle: "MassagesalonDev@gmail.com", isActive: true },
+];
+
 export default function ContactPage() {
+  const [contactRows, setContactRows] = useState(FALLBACK_CONTACT_ROWS);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadContacts() {
+      try {
+        const data = await contentItemsAPI.getPublic(CONTENT_TYPES.contact);
+        const activeRows = data.filter((item) => item.isActive);
+        if (isMounted && activeRows.length > 0) {
+          setContactRows(activeRows);
+        }
+      } catch (error) {
+        console.error("Contact content load error:", error);
+      }
+    }
+
+    loadContacts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("contact:rows-updated"));
+  }, [contactRows]);
+
   return (
     <>
       <section className="contact-visual">
@@ -8,40 +49,12 @@ export default function ContactPage() {
       </section>
 
       <section className="contact-info">
-        <div className="contact-info-row">
-          <p>Temporal</p>
-          <p className="contact-clock">00:00 EST</p>
-        </div>
-
-        <div className="contact-info-row">
-          <p>Email для вопросов</p>
-          <p>MassageSalon@gmail.com</p>
-        </div>
-
-        <div className="contact-info-row">
-          <p>Телофон</p>
-          <p>+373 123 456</p>
-        </div>
-
-        <div className="contact-info-row">
-          <p>Техническая поддержка</p>
-          <p>MassagesalonTech@gmail.com</p>
-        </div>
-
-        <div className="contact-info-row">
-          <p>Адрес</p>
-          <p>Chishinau , Moldova</p>
-        </div>
-
-        <div className="contact-info-row">
-          <p>Рекламные предложения</p>
-          <p>MassageSalonCollab@gmail.com</p>
-        </div>
-
-        <div className="contact-info-row">
-          <p>Разработка</p>
-          <p>MassagesalonDev@gmail.com</p>
-        </div>
+        {contactRows.map((row) => (
+          <div className="contact-info-row" key={row.id || row.title} data-contact-source="true">
+            <p>{row.title}</p>
+            <p className={row.id === "time" ? "contact-clock" : undefined}>{row.subtitle}</p>
+          </div>
+        ))}
       </section>
 
       <div className="contact-footer">

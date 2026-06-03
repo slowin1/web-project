@@ -3,18 +3,40 @@ import { usersAPI } from "../../api/admin";
 import { useAdminText } from "./adminI18n";
 
 const ROLE_ORDER = ["Admin", "Specialist", "Client", "Guest"];
+const ROLE_BY_VALUE = {
+  1: "Client",
+  2: "Specialist",
+  3: "Guest",
+  4: "Admin",
+};
+const ROLE_VALUE_BY_NAME = {
+  Client: 1,
+  Specialist: 2,
+  Guest: 3,
+  Admin: 4,
+};
 
 function normalizeRole(role) {
-  if (!role) return "";
+  if (role === null || role === undefined || role === "") return "";
+  const numericRole = Number(role);
+  if (Number.isInteger(numericRole) && ROLE_BY_VALUE[numericRole]) {
+    return ROLE_BY_VALUE[numericRole];
+  }
+  if (Number.isInteger(numericRole)) {
+    return "Client";
+  }
   return String(role);
 }
 
 function roleToUserRole(role) {
-  // backend accepts Role as string of enum names: Client/Specialist/Guest/Admin
-  // frontend likely receives same.
   const r = normalizeRole(role);
   const found = ROLE_ORDER.find((x) => x.toLowerCase() === r.toLowerCase());
   return found || r;
+}
+
+function userRoleToApiValue(role) {
+  const normalizedRole = roleToUserRole(role);
+  return ROLE_VALUE_BY_NAME[normalizedRole] || ROLE_VALUE_BY_NAME.Client;
 }
 
 export default function UsersManager() {
@@ -89,19 +111,11 @@ export default function UsersManager() {
       const currentRole = roleToUserRole(details.role);
       const nextRole = currentRole.toLowerCase() === "guest" ? "Client" : "Guest";
 
-      const payload = {
-        firstName: details.firstName,
-        lastName: details.lastName,
-        userName: details.userName,
-        phone: details.phone,
-        role: nextRole,
-      };
-
-      await usersAPI.update(details.id, payload);
+      await usersAPI.updateRole(details.id, userRoleToApiValue(nextRole));
       await refreshSingle();
     } catch (e) {
       console.error(e);
-      setError("Не удалось изменить бан.");
+      setError(`Не удалось изменить бан. ${e.message || ""}`.trim());
     } finally {
       setSaving(false);
     }
@@ -112,19 +126,11 @@ export default function UsersManager() {
     setSaving(true);
     setError("");
     try {
-      const payload = {
-        firstName: details.firstName,
-        lastName: details.lastName,
-        userName: details.userName,
-        phone: details.phone,
-        role: nextRole,
-      };
-
-      await usersAPI.update(details.id, payload);
+      await usersAPI.updateRole(details.id, userRoleToApiValue(nextRole));
       await refreshSingle();
     } catch (e) {
       console.error(e);
-      setError("Не удалось изменить права.");
+      setError(`Не удалось изменить права. ${e.message || ""}`.trim());
     } finally {
       setSaving(false);
     }
@@ -204,7 +210,7 @@ export default function UsersManager() {
                       <span className="mono">@{u.userName}</span>
                     </div>
                     <div className="user-item-badges">
-                      <span className="role-badge">{u.role}</span>
+                      <span className="role-badge">{roleToUserRole(u.role)}</span>
                     </div>
                   </button>
                 </li>
@@ -251,7 +257,7 @@ export default function UsersManager() {
                 <div>
                   <div className="field-label">{t.users.role}</div>
                   <div className="field-value">
-                    <span className="role-badge">{details.role}</span>
+                    <span className="role-badge">{roleToUserRole(details.role)}</span>
                   </div>
                 </div>
               </div>

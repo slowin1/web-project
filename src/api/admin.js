@@ -46,7 +46,14 @@ async function apiRequest(endpoint, options = {}) {
         localStorage.removeItem("adminToken");
         window.location.href = "/LogIn";
       }
-      throw new Error(`API Error: ${response.status}`);
+
+      const contentType = response.headers.get("content-type") || "";
+      const errorBody = contentType.includes("application/json")
+        ? JSON.stringify(await response.json())
+        : await response.text();
+      throw new Error(
+        `API Error: ${response.status}${errorBody ? ` - ${errorBody}` : ""}`,
+      );
     }
 
     if (response.status === 204) {
@@ -86,6 +93,11 @@ export const usersAPI = {
     apiRequest(ENDPOINTS.users, { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) =>
     apiRequest(`${ENDPOINTS.users}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateRole: (id, role) =>
+    apiRequest(`${ENDPOINTS.users}/${id}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role }),
+    }),
   delete: (id) => apiRequest(`${ENDPOINTS.users}/${id}`, { method: "DELETE" }),
 };
 
@@ -266,8 +278,23 @@ export const bookingsAPI = {
   getById: (id) => apiRequest(`${ENDPOINTS.serviceBookings}/${id}`),
   update: (id, data) =>
     apiRequest(`${ENDPOINTS.serviceBookings}/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateStatus: (id, status) =>
+    apiRequest(`${ENDPOINTS.serviceBookings}/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  putStatus: (id, status) =>
+    apiRequest(`${ENDPOINTS.serviceBookings}/${id}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status }),
+    }),
+  complete: (id) =>
+    apiRequest(`${ENDPOINTS.serviceBookings}/${id}/complete`, { method: "POST" }),
+  getCompleted: () => apiRequest(`${ENDPOINTS.serviceBookings}/completed`),
   delete: (id) => apiRequest(`${ENDPOINTS.serviceBookings}/${id}`, { method: "DELETE" }),
   getByUser: (userId) => apiRequest(`${ENDPOINTS.serviceBookings}/user/${userId}`),
+  getBySpecialist: (specialistId) =>
+    apiRequest(`${ENDPOINTS.serviceBookings}/specialist/${specialistId}`),
   getByService: (serviceId) => apiRequest(`${ENDPOINTS.serviceBookings}/service/${serviceId}`),
   getAvailableSlots: (serviceId, date) =>
     apiRequest(`${ENDPOINTS.serviceBookings}/available-slots?serviceId=${serviceId}&date=${date}`),

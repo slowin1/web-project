@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect, useLayoutEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
@@ -7,20 +7,19 @@ import ServiceBooking from "../components/ServiceBooking/ServiceBooking";
 import { fetchCatalogBundle } from "../api/catalog";
 import "../../css/unit.css";
 import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const FALLBACK_SERVICE_IMAGE =
+  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
 
 export default function UnitPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const scrollGalleryRef = useRef(null);
   const heroRef = useRef(null);
-  const activeMinimapIndex = useRef(0);
   const [services, setServices] = useState([]);
   const [currentService, setCurrentService] = useState(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [relatedServices, setRelatedServices] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingError, setBookingError] = useState("");
@@ -77,19 +76,11 @@ export default function UnitPage() {
       .sort(() => 0.5 - Math.random());
     setRelatedServices(shuffled.slice(0, 4));
 
-    const timer = setTimeout(() => {
-      ScrollTrigger.refresh();
-    }, 150);
-
-    return () => clearTimeout(timer);
   }, [id, services]);
 
   useEffect(() => {
     const handleScrollToTop = () => {
       window.scrollTo(0, 0);
-      setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 150);
     };
 
     window.addEventListener("scrollToTop", handleScrollToTop);
@@ -99,85 +90,137 @@ export default function UnitPage() {
     };
   }, []);
 
-  useGSAP(() => {
-    const snapshots = document.querySelectorAll(".service-snapshot");
-    const minimapImages = document.querySelectorAll(
-      ".service-snapshot-minimap-img",
-    );
-    const totalImages = snapshots.length;
+  const serviceImages = useMemo(() => {
+    if (!currentService) {
+      return [];
+    }
 
-    if (totalImages === 0) {
+    return Array.isArray(currentService.images) && currentService.images.length > 0
+      ? currentService.images.slice(0, 7)
+      : [currentService.image || FALLBACK_SERVICE_IMAGE];
+  }, [currentService]);
+
+  const detailImage = serviceImages[1] || serviceImages[0] || FALLBACK_SERVICE_IMAGE;
+
+  useLayoutEffect(() => {
+    if (!currentService) {
       return;
     }
 
-    gsap.set(snapshots[0], { y: "0%", scale: 1 });
-    gsap.set(minimapImages[0], { scale: 1.25 });
-    for (let i = 1; i < totalImages; i++) {
-      gsap.set(snapshots[i], { y: "100%", scale: 1 });
-      gsap.set(minimapImages[i], { scale: 1 });
+    if (window.lenis?.destroy) {
+      window.lenis.destroy();
+      window.lenis = null;
     }
 
-    ScrollTrigger.create({
-      trigger: heroRef.current,
-      start: "top top",
-      end: `+=${window.innerHeight * 5}`,
-      pin: true,
-      pinSpacing: true,
-      scrub: 1,
-      onUpdate: (self) => {
-        const progress = self.progress;
+    const scrollElement = scrollGalleryRef.current;
+    const heroElement = heroRef.current;
+    if (!scrollElement || !heroElement) {
+      return;
+    }
 
-        let currentActiveIndex = 0;
+    const slides = gsap.utils.toArray(
+      heroElement.querySelectorAll(".service-gallery-slide"),
+    );
 
-        for (let i = 1; i < totalImages; i++) {
-          const imageStart = (i - 1) / (totalImages - 1);
-          const imageEnd = i / (totalImages - 1);
+    if (slides.length === 0) {
+      return;
+    }
 
-          let localProgress = (progress - imageStart) / (imageEnd - imageStart);
-          localProgress = Math.max(0, Math.min(1, localProgress));
-
-          const yValue = 100 - localProgress * 100;
-          gsap.set(snapshots[i], { y: `${yValue}%` });
-
-          const scaleValue = 1 + localProgress * 0.5;
-          gsap.set(snapshots[i - 1], { scale: scaleValue });
-
-          if (localProgress >= 0.5) {
-            currentActiveIndex = i;
-          }
-        }
-
-        if (currentActiveIndex !== activeMinimapIndex.current) {
-          gsap.to(minimapImages[currentActiveIndex], {
-            scale: 1.25,
-            duration: 0.3,
-            ease: "power2.out",
-          });
-
-          for (let i = 0; i < currentActiveIndex; i++) {
-            gsap.to(minimapImages[i], {
-              scale: 0,
-              duration: 0.3,
-              ease: "power2.out",
-            });
-          }
-
-          for (let i = currentActiveIndex + 1; i < totalImages; i++) {
-            gsap.to(minimapImages[i], {
-              scale: 1,
-              duration: 0.3,
-              ease: "power2.out",
-            });
-          }
-
-          activeMinimapIndex.current = currentActiveIndex;
-        }
-      },
+    gsap.set(slides, {
+      autoAlpha: 0,
+      clipPath: "inset(0% 0% 0% 100%)",
+      scale: 1.08,
+      xPercent: 5,
+      yPercent: 0,
+      transformOrigin: "center center",
     });
+    gsap.set(slides[0], {
+      autoAlpha: 1,
+      clipPath: "inset(0% 0% 0% 0%)",
+      scale: 1,
+      xPercent: 0,
+    });
+    setActiveImageIndex(0);
+
+    let frameId = 0;
+
+    const updateActiveImage = () => {
+      frameId = 0;
+      const rect = scrollElement.getBoundingClientRect();
+      const scrollDistance = Math.max(scrollElement.offsetHeight - window.innerHeight, 1);
+      const progress = Math.max(0, Math.min(1, -rect.top / scrollDistance));
+      const galleryProgress = progress * Math.max(slides.length - 1, 1);
+      const currentSlide = Math.min(slides.length - 1, Math.floor(galleryProgress));
+      const nextSlide = Math.min(slides.length - 1, currentSlide + 1);
+      const slideProgress = galleryProgress - currentSlide;
+      const activeSlide = Math.min(slides.length - 1, Math.round(galleryProgress));
+
+      slides.forEach((slide, slideIndex) => {
+        if (slideIndex === currentSlide) {
+          gsap.to(slide, {
+            autoAlpha: 1,
+            clipPath: "inset(0% 0% 0% 0%)",
+            scale: 1 + slideProgress * 0.04,
+            xPercent: -slideProgress * 4,
+            duration: 0.22,
+            ease: "power2.out",
+            overwrite: true,
+          });
+          return;
+        }
+
+        if (slideIndex === nextSlide && nextSlide !== currentSlide) {
+          gsap.to(slide, {
+            autoAlpha: 1,
+            clipPath: `inset(0% 0% 0% ${(1 - slideProgress) * 100}%)`,
+            scale: 1.08 - slideProgress * 0.08,
+            xPercent: 5 - slideProgress * 5,
+            duration: 0.22,
+            ease: "power2.out",
+            overwrite: true,
+          });
+          return;
+        }
+
+        gsap.to(slide, {
+          autoAlpha: 0,
+          clipPath: "inset(0% 0% 0% 100%)",
+          scale: 1.08,
+          xPercent: 5,
+          duration: 0.18,
+          ease: "power2.out",
+          overwrite: true,
+        });
+      });
+
+      setActiveImageIndex((currentIndex) =>
+        currentIndex === activeSlide ? currentIndex : activeSlide,
+      );
+    };
+
+    const scheduleActiveImageUpdate = () => {
+      if (frameId) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(updateActiveImage);
+    };
 
     window.scrollTo(0, 0);
-    ScrollTrigger.refresh();
-  }, []);
+    updateActiveImage();
+    window.addEventListener("scroll", scheduleActiveImageUpdate, { passive: true });
+    window.addEventListener("resize", scheduleActiveImageUpdate);
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      window.removeEventListener("scroll", scheduleActiveImageUpdate);
+      window.removeEventListener("resize", scheduleActiveImageUpdate);
+      gsap.killTweensOf(slides);
+    };
+  }, [currentService?.id, serviceImages.length]);
 
   const handleBookNow = () => {
     const token = localStorage.getItem("authToken");
@@ -193,6 +236,17 @@ export default function UnitPage() {
 
   const handleSaveService = () => {
     alert(`Услуга "${currentService.name}" сохранена в избранное`);
+  };
+
+  const handleGalleryThumbClick = (index) => {
+    const scrollElement = scrollGalleryRef.current;
+    if (!scrollElement || serviceImages.length <= 1) return;
+
+    const progress = index / (serviceImages.length - 1);
+    const scrollDistance = Math.max(scrollElement.offsetHeight - window.innerHeight, 1);
+    const targetY = window.scrollY + scrollElement.getBoundingClientRect().top + scrollDistance * progress;
+
+    window.scrollTo({ top: targetY, behavior: "smooth" });
   };
 
   if (isLoading) {
@@ -241,109 +295,49 @@ export default function UnitPage() {
           </div>
         </div>
       )}
+      <div
+        className="service-gallery-scroll"
+        ref={scrollGalleryRef}
+        style={{ "--service-gallery-steps": Math.max(serviceImages.length, 2) }}
+      >
       <section className="service-hero" ref={heroRef}>
-        <div className="service-hero-col service-snapshots">
-          <div className="service-snapshot">
-            <img
-              src={currentService.image}
-              alt={currentService.name}
-              onError={(e) => {
-                e.target.src =
-                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
-              }}
-            />
-          </div>
-          <div className="service-snapshot">
-            <img
-              src={currentService.image}
-              alt={currentService.name}
-              onError={(e) => {
-                e.target.src =
-                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
-              }}
-            />
-          </div>
-          <div className="service-snapshot">
-            <img
-              src={currentService.image}
-              alt={currentService.name}
-              onError={(e) => {
-                e.target.src =
-                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
-              }}
-            />
-          </div>
-          <div className="service-snapshot">
-            <img
-              src={currentService.image}
-              alt={currentService.name}
-              onError={(e) => {
-                e.target.src =
-                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
-              }}
-            />
-          </div>
-          <div className="service-snapshot">
-            <img
-              src={currentService.image}
-              alt={currentService.name}
-              onError={(e) => {
-                e.target.src =
-                  "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&h=800&fit=crop";
-              }}
-            />
-          </div>
-          <div className="service-snapshot-minimap">
-            <div className="service-snapshot-minimap-img">
+        <div className="service-hero-col service-gallery">
+          <div className="service-gallery-stage">
+          {serviceImages.map((imageUrl, index) => (
+            <div
+              className="service-gallery-slide"
+              key={`${imageUrl}-${index}`}
+              style={{ zIndex: index + 1 }}
+            >
               <img
-                src={currentService.minimap}
-                alt=""
+                src={imageUrl}
+                alt={`${currentService.name} фото ${index + 1}`}
                 onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
+                  e.target.src = FALLBACK_SERVICE_IMAGE;
                 }}
               />
             </div>
-            <div className="service-snapshot-minimap-img">
-              <img
-                src={currentService.minimap}
-                alt=""
-                onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
-                }}
-              />
-            </div>
-            <div className="service-snapshot-minimap-img">
-              <img
-                src={currentService.minimap}
-                alt=""
-                onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
-                }}
-              />
-            </div>
-            <div className="service-snapshot-minimap-img">
-              <img
-                src={currentService.minimap}
-                alt=""
-                onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
-                }}
-              />
-            </div>
-            <div className="service-snapshot-minimap-img">
-              <img
-                src={currentService.minimap}
-                alt=""
-                onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=100&h=125&fit=crop";
-                }}
-              />
-            </div>
+          ))}
+          </div>
+          <div className="service-gallery-thumbs" aria-label="Фотографии услуги">
+            {serviceImages.map((imageUrl, index) => (
+              <button
+                type="button"
+                className={`service-gallery-thumb ${activeImageIndex === index ? "is-active" : ""}`}
+                key={`${imageUrl}-thumb-${index}`}
+                onClick={() => handleGalleryThumbClick(index)}
+                aria-label={`Показать фото ${index + 1}`}
+              >
+                <img
+                  src={imageUrl}
+                  alt=""
+                  onError={(e) => {
+                    e.target.src = FALLBACK_SERVICE_IMAGE;
+                  }}
+                />
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </button>
+            ))}
           </div>
         </div>
         <div className="service-hero-col service-meta">
@@ -379,6 +373,7 @@ export default function UnitPage() {
           </div>
         </div>
       </section>
+      </div>
 
       <section className="service-details">
         <div className="service-col service-col-copy">
@@ -392,7 +387,7 @@ export default function UnitPage() {
           </div>
         </div>
         <div className="service-col service-col-img">
-          <img src={currentService.image} alt={currentService.name} />
+          <img src={detailImage} alt={currentService.name} />
         </div>
       </section>
 

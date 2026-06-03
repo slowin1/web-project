@@ -1,6 +1,8 @@
 // navigation clock with blinking colon
 const clockEl = document.querySelector(".nav-clock p");
-const colonEl = clockEl.querySelector("span");
+const colonEl = clockEl?.querySelector("span");
+let clockInterval = window.__navClockInterval;
+let blinkInterval = window.__navBlinkInterval;
 
 function getTimeParts() {
   const now = new Date();
@@ -15,16 +17,21 @@ function getTimeParts() {
 }
 
 function updateClock() {
+  if (!clockEl) return;
   const { hours, minutes, timeZone } = getTimeParts();
   clockEl.childNodes[0].textContent = `${hours} `;
   clockEl.childNodes[2].textContent = ` ${minutes} ${timeZone}`;
 }
 
 function blinkColon() {
+  if (!colonEl) return;
   colonEl.style.visibility =
     colonEl.style.visibility === "hidden" ? "visible" : "hidden";
 }
 
+if (clockInterval) clearInterval(clockInterval);
+if (blinkInterval) clearInterval(blinkInterval);
+
 updateClock();
-setInterval(updateClock, 1000);
-setInterval(blinkColon, 500);
+window.__navClockInterval = setInterval(updateClock, 1000);
+window.__navBlinkInterval = setInterval(blinkColon, 500);

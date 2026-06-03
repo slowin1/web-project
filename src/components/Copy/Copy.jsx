@@ -14,6 +14,7 @@ export default function Copy({ children, animateOnScroll = true, delay = 0 }) {
     if (!element) return;
 
     const words = element.querySelectorAll(".word");
+    if (words.length === 0) return;
     
     gsap.fromTo(
       words,

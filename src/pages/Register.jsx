@@ -32,7 +32,7 @@ export default function Register() {
             // Логирование для отладки
             console.log("📤 Отправляю данные при регистрации:", formData);
 
-            const response = await fetch(`${API_BASE_URL}/Auth/register`, {
+            const response = await fetch(`${API_BASE_URL}/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

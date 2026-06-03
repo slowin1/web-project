@@ -26,6 +26,14 @@ function buildBookingDescription({ service, bookingData, selectedTime }) {
   return description.slice(0, 200);
 }
 
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+}
+
 export default function ServiceBooking({ service, onClose }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -36,6 +44,8 @@ export default function ServiceBooking({ service, onClose }) {
   });
   const [bookingStep, setBookingStep] = useState("calendar"); // calendar, time, form, success
   const [isLoading, setIsLoading] = useState(false);
+  const [isSlotsLoading, setIsSlotsLoading] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -68,11 +78,64 @@ export default function ServiceBooking({ service, onClose }) {
     "20:00",
   ];
 
-  // Disable past dates and Sundays
+  useEffect(() => {
+    if (!selectedDate || bookingStep !== "time") {
+      setIsSlotsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+    const loadAvailableSlots = async () => {
+      setIsSlotsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const date = formatDateForApi(selectedDate);
+        const response = await fetch(
+          `${API_BASE_URL}/ServiceBookings/available-slots?serviceId=${encodeURIComponent(
+            service.id
+          )}&date=${encodeURIComponent(date)}`
+          ,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error("Не удалось загрузить свободное время");
+        }
+
+        const slots = await response.json();
+        if (!cancelled) {
+          setAvailableSlots(Array.isArray(slots) ? slots : []);
+        }
+      } catch (error) {
+        console.error("Available slots error:", error);
+        if (!cancelled) {
+          setAvailableSlots(availableTimeSlots);
+          setErrorMessage("Не удалось обновить занятость времени. Сервер проверит слот при бронировании.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSlotsLoading(false);
+        }
+      }
+    };
+
+    loadAvailableSlots();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [selectedDate, bookingStep, service.id]);
+
+  // Disable only past dates. Availability is controlled by bookings/time slots, not weekday.
   const isTileDisabled = ({ date }) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return date < today || date.getDay() === 0;
+    return date < today;
   };
 
   const handleCancel = () => {
@@ -88,11 +151,18 @@ export default function ServiceBooking({ service, onClose }) {
   const handleDateSelect = (date) => {
     setSelectedDate(date);
     setSelectedTime(null);
+    setAvailableSlots([]);
     setBookingStep("time");
   };
 
   const handleTimeSelect = (time) => {
+    if (!availableSlots.includes(time)) {
+      setErrorMessage("Это время уже занято. Выберите другой слот.");
+      return;
+    }
+
     setSelectedTime(time);
+    setErrorMessage("");
     setBookingStep("form");
   };
 
@@ -113,6 +183,8 @@ export default function ServiceBooking({ service, onClose }) {
       const bookingDate = formatDateForApi(selectedDate);
       const bookingTime = `${bookingDate}T${selectedTime}:00`;
       const bookingName = `${bookingData.name} - ${service.name}`.slice(0, 100);
+      const storedUser = getStoredUser();
+      const clientUserId = storedUser?.id ?? storedUser?.Id ?? storedUser?.userId ?? storedUser?.UserId ?? null;
 
       // Backend writes this DTO to the Bookings table.
       const bookingRequest = {
@@ -123,6 +195,7 @@ export default function ServiceBooking({ service, onClose }) {
           bookingData,
           selectedTime,
         }),
+        clientUserId,
         bookingDate: `${bookingDate}T00:00:00`,
         bookingTime,
       };
@@ -144,6 +217,11 @@ export default function ServiceBooking({ service, onClose }) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (response.status === 400) {
+          setBookingStep("time");
+          setSelectedTime(null);
+          setAvailableSlots((slots) => slots.filter((slot) => slot !== selectedTime));
+        }
         throw new Error(errorData.message || `Ошибка при бронировании (${response.status})`);
       }
 
@@ -158,6 +236,7 @@ export default function ServiceBooking({ service, onClose }) {
         duration: service.duration,
         price: service.price,
         status: "confirmed",
+        clientUserId,
       };
       const storedBookings = JSON.parse(localStorage.getItem("userBookings") || "[]");
       localStorage.setItem("userBookings", JSON.stringify([...storedBookings, savedBooking]));
@@ -211,17 +290,30 @@ export default function ServiceBooking({ service, onClose }) {
             <h3>Выберите время</h3>
           </div>
           <p className="selected-date">{formatDate(selectedDate)}</p>
+          {isSlotsLoading && <p className="booking-hint">Проверяю свободное время...</p>}
+          {errorMessage && <div className="error-message">{errorMessage}</div>}
           <div className="time-slots">
-            {availableTimeSlots.map((time) => (
-              <button
-                key={time}
-                className={`time-slot ${selectedTime === time ? "active" : ""}`}
-                onClick={() => handleTimeSelect(time)}
-              >
-                {time}
-              </button>
-            ))}
+            {availableTimeSlots.map((time) => {
+              const isAvailable = availableSlots.includes(time);
+
+              return (
+                <button
+                  key={time}
+                  className={`time-slot ${selectedTime === time ? "active" : ""} ${
+                    isAvailable ? "" : "disabled"
+                  }`}
+                  disabled={isSlotsLoading || !isAvailable}
+                  onClick={() => handleTimeSelect(time)}
+                  title={isAvailable ? "Свободно" : "Занято"}
+                >
+                  {time}
+                </button>
+              );
+            })}
           </div>
+          {!isSlotsLoading && availableSlots.length === 0 && (
+            <p className="booking-hint">На выбранную дату свободного времени нет</p>
+          )}
           <p className="booking-hint">Выберите удобное время для бронирования</p>
         </div>
       )}

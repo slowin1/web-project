@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useDebounce from "../hooks/useDebounce";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Copy from "../components/Copy/Copy";
@@ -14,15 +15,11 @@ gsap.registerPlugin(ScrollTrigger);
 export default function LabPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("all");
-<<<<<<< HEAD
-  const [filteredServices, setFilteredServices] = useState(massageServices);
-=======
   const [allServices, setAllServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
   const [categories, setCategories] = useState([{ id: "all", name: "Все услуги", styleKey: "all" }]);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery, 250);
->>>>>>> origin/main
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -76,68 +73,49 @@ export default function LabPage() {
   }, []);
 
   const handleCategoryChange = (newCategory) => {
-    if (isAnimating) return;
     if (newCategory === activeCategory) return;
-
-    setIsAnimating(true);
     setActiveCategory(newCategory);
-
-    gsap.killTweensOf(productRefs.current);
-
-    gsap.to(productRefs.current, {
-      opacity: 0,
-      scale: 0.5,
-      duration: 0.25,
-      stagger: 0.05,
-      ease: "power3.out",
-      onComplete: () => {
-<<<<<<< HEAD
-        const filtered = massageServices.filter((service) => {
-          if (newCategory === "all") return true;
-          return service.category === newCategory;
-=======
-        const filtered = allServices.filter((service) => {
-          const matchesCategory = newCategory === "all" ? true : String(service.category) === String(newCategory);
-          const matchesQuery = !searchQuery ? true : service.name.toLowerCase().includes(searchQuery.toLowerCase());
-          return matchesCategory && matchesQuery;
->>>>>>> origin/main
-        });
-
-        setFilteredServices(filtered);
-      },
-    });
   };
 
-<<<<<<< HEAD
-=======
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
 
   useEffect(() => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    gsap.killTweensOf(productRefs.current);
+    if (allServices.length === 0) {
+      setFilteredServices([]);
+      setIsAnimating(false);
+      return;
+    }
 
-    gsap.to(productRefs.current, {
+    const filtered = allServices.filter((service) => {
+      const matchesCategory = activeCategory === "all" ? true : String(service.category) === String(activeCategory);
+      const matchesQuery = !debouncedQuery ? true : service.name.toLowerCase().includes(debouncedQuery.toLowerCase());
+      return matchesCategory && matchesQuery;
+    });
+
+    const visibleRefs = productRefs.current.filter(Boolean);
+    if (isInitialMount.current || visibleRefs.length === 0) {
+      setFilteredServices(filtered);
+      setIsAnimating(false);
+      return;
+    }
+
+    setIsAnimating(true);
+    gsap.killTweensOf(visibleRefs);
+
+    gsap.to(visibleRefs, {
       opacity: 0,
       scale: 0.5,
       duration: 0.18,
       stagger: 0.03,
       ease: "power3.out",
       onComplete: () => {
-        const filtered = allServices.filter((service) => {
-          const matchesCategory = activeCategory === "all" ? true : String(service.category) === String(activeCategory);
-          const matchesQuery = !debouncedQuery ? true : service.name.toLowerCase().includes(debouncedQuery.toLowerCase());
-          return matchesCategory && matchesQuery;
-        });
-
         setFilteredServices(filtered);
       },
     });
   }, [debouncedQuery, activeCategory, allServices]);
 
->>>>>>> origin/main
   useEffect(() => {
     productRefs.current = productRefs.current.slice(0, filteredServices.length);
     gsap.killTweensOf(productRefs.current);
@@ -162,6 +140,9 @@ export default function LabPage() {
   const handleServiceClick = (serviceId) => {
     navigate(`/lab/${serviceId}`);
   };
+
+  const activeCategoryName =
+    categories.find((category) => category.id === activeCategory)?.name || "Все услуги";
 
   return (
     <div className="lab-page">
@@ -224,33 +205,36 @@ export default function LabPage() {
       <section className="services-header">
         <div className="container">
           <Copy animateOnScroll={false} delay={0.65}>
-            <h1>Wardrobe Circulation</h1>
+            <h1>Услуги</h1>
           </Copy>
           <div className="services-header-divider"></div>
           <div className="service-filter-bar">
             <div className="filter-bar-header">
-              <p className="bodyCopy">Filters</p>
+              <span>Каталог</span>
+              <p className="bodyCopy">{activeCategoryName}</p>
+            </div>
+            <div className="filter-bar-search">
+              <input
+                type="text"
+                placeholder="Поиск по названию"
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+              <div className="filter-bar-count">
+                {filteredServices.length}
+              </div>
             </div>
             <div className="filter-bar-tags">
               {categories.map((category) => (
-                <p
+                <button
+                  type="button"
                   key={category.id}
                   className={`bodyCopy ${activeCategory === category.id ? "active" : ""}`}
                   onClick={() => handleCategoryChange(category.id)}
+                  disabled={isAnimating}
                 >
                   {category.name}
-                </p>
-              ))}
-            </div>
-            <div className="filter-bar-colors">
-              {categories.slice(1).map((category) => (
-                <span
-                  key={category.id}
-                  className={`color-selector ${category.styleKey || "generic"} ${activeCategory === category.id ? "active" : ""}`}
-                  onClick={() => handleCategoryChange(category.id)}
-                  style={{ cursor: isAnimating ? "not-allowed" : "pointer" }}
-                  title={category.name}
-                ></span>
+                </button>
               ))}
             </div>
           </div>

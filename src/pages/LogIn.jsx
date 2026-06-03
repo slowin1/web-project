@@ -28,7 +28,7 @@ export default function LogIn() {
       // Логирование для отладки
       console.log("📤 Отправляю данные:", formData);
 
-      const response = await fetch(`${API_BASE_URL}/Auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -71,6 +71,9 @@ export default function LogIn() {
         const isAdminByRole =
           roleClaim === 4 || roleClaim === "4" ||
           (typeof roleClaim === "string" && roleClaim.toLowerCase() === "admin");
+        const isSpecialistByRole =
+          roleClaim === 2 || roleClaim === "2" ||
+          (typeof roleClaim === "string" && roleClaim.toLowerCase() === "specialist");
 
         // Fallback: older logic by username.
         const isAdminByUsername = data?.userName?.toLowerCase() === "admin";
@@ -82,11 +85,7 @@ export default function LogIn() {
           localStorage.setItem(
             "user",
             JSON.stringify({
-              ...data.user,
-              // keep compatibility with existing checks
-              role: data.user?.role ?? roleClaim,
-              username: data.user?.username ?? data.userName,
-              userName: data.user?.userName ?? data.userName,
+              ...data,
             })
           );
 
@@ -95,6 +94,11 @@ export default function LogIn() {
         }
 
         localStorage.removeItem("adminToken");
+        if (isSpecialistByRole) {
+          navigate("/specialist-profile", { replace: true });
+          return;
+        }
+
         navigate("/profile");
 
       } else {
