@@ -147,8 +147,29 @@ function applyTransitionState() {
 }
 
 async function loadPageModules(modulePaths) {
+  const moduleLoaders = {
+    "/js/preloader.js": () => import("../js/preloader.js"),
+    "/js/lenis-scroll.js": () => import("../js/lenis-scroll.js"),
+    "/js/transition.js": () => import("../js/transition.js"),
+    "/js/nav.js": () => import("../js/nav.js"),
+    "/js/menu.js": () => import("../js/menu.js"),
+    "/js/animated-copy.js": () => import("../js/animated-copy.js"),
+    "/js/skyline.js": () => import("../js/skyline.js"),
+    "/js/lab.js": () => import("../js/lab.js"),
+    "/js/particle-visual.js": () => import("../js/particle-visual.js"),
+    "/js/pie-transition.js": () => import("../js/pie-transition.js"),
+    "/js/stats.js": () => import("../js/stats.js"),
+    "/js/clients.js": () => import("../js/clients.js"),
+    "/js/work.js": () => import("../js/work.js"),
+    "/js/project.js": () => import("../js/project.js"),
+    "/js/contact.js": () => import("../js/contact.js"),
+  };
+
   for (const modulePath of modulePaths) {
-    await import(/* @vite-ignore */ modulePath);
+    const loadModule = moduleLoaders[modulePath];
+    if (loadModule) {
+      await loadModule();
+    }
   }
 }
 
