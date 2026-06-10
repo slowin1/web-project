@@ -469,6 +469,11 @@ class WorkDistortion {
     this.visibilityObserver = null;
     this.rebuildTimer = null;
     this.animationFrame = null;
+    this.domAnimationFrame = null;
+    this.domMedia = [];
+    this.domScrollHandler = null;
+    this.lastScrollY = window.scrollY || window.pageYOffset;
+    this.nativeVelocity = 0;
     this.isRendering = false;
     this.meshBuildId = 0;
     this.isDestroyed = false;
@@ -488,6 +493,7 @@ class WorkDistortion {
     this.addEventListeners();
     this.observeGalleryVisibility();
     this.observeMediaChanges();
+    this.startDomAnimation();
     if (!this.isMobile) this.startRender();
   }
 
@@ -549,6 +555,11 @@ class WorkDistortion {
     const scrollY = window.scrollY || window.pageYOffset;
     const allMedia = [...document.querySelectorAll(".work-item img")];
     const media = allMedia.slice(0, this.maxDistortionItems);
+    this.domMedia = allMedia;
+    allMedia.forEach((img) => {
+      img.classList.add("work-photo-animated");
+    });
+    requestAnimationFrame(() => this.updateDomAnimations());
 
     if (this.isMobile || !this.renderer) {
       allMedia.forEach((img) => {
@@ -711,7 +722,9 @@ class WorkDistortion {
 
   addEventListeners() {
     this.resizeHandler = () => this.handleResize();
+    this.domScrollHandler = () => this.updateDomAnimations();
     window.addEventListener("resize", this.resizeHandler);
+    window.addEventListener("scroll", this.domScrollHandler, { passive: true });
   }
 
   observeGalleryVisibility() {
@@ -799,6 +812,63 @@ class WorkDistortion {
     this.render();
   }
 
+  startDomAnimation() {
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion || this.domAnimationFrame || this.isDestroyed) {
+      return;
+    }
+
+    const animateDom = () => {
+      if (this.isDestroyed) {
+        this.domAnimationFrame = null;
+        return;
+      }
+
+      this.updateDomAnimations();
+      this.domAnimationFrame = requestAnimationFrame(animateDom);
+    };
+
+    this.domAnimationFrame = requestAnimationFrame(animateDom);
+  }
+
+  updateDomAnimations() {
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollDelta = scrollY - this.lastScrollY;
+    this.lastScrollY = scrollY;
+    this.nativeVelocity += (scrollDelta - this.nativeVelocity) * 0.12;
+
+    const velocity = Math.min(
+      Math.abs(this.smoothVelocity || this.nativeVelocity),
+      28,
+    );
+
+    this.domMedia.forEach((img) => {
+      if (!document.body.contains(img)) return;
+      if (getComputedStyle(img).opacity === "0") {
+        img.style.transform = "";
+        img.style.filter = "";
+        return;
+      }
+
+      const bounds = img.getBoundingClientRect();
+      const isVisible = bounds.bottom > 0 && bounds.top < window.innerHeight;
+      if (!isVisible) return;
+
+      const centerOffset =
+        (bounds.top + bounds.height / 2 - window.innerHeight / 2) /
+        window.innerHeight;
+      const shift = Math.max(-34, Math.min(34, centerOffset * -36));
+      const scale = 1.018 + velocity * 0.0016;
+      const blur = velocity > 7 ? Math.min(0.65, velocity / 42) : 0;
+
+      img.style.transform = `translate3d(0, ${shift.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+      img.style.filter = blur ? `blur(${blur.toFixed(2)}px)` : "";
+    });
+  }
+
   stopRender() {
     this.isRendering = false;
     if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
@@ -839,7 +909,10 @@ class WorkDistortion {
     clearTimeout(this.rebuildTimer);
 
     this.stopRender();
+    if (this.domAnimationFrame) cancelAnimationFrame(this.domAnimationFrame);
+    this.domAnimationFrame = null;
     if (this.resizeHandler) window.removeEventListener("resize", this.resizeHandler);
+    if (this.domScrollHandler) window.removeEventListener("scroll", this.domScrollHandler);
     if (this.mutationObserver) this.mutationObserver.disconnect();
     if (this.visibilityObserver) this.visibilityObserver.disconnect();
 

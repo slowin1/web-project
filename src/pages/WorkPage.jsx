@@ -29,6 +29,69 @@ export default function WorkPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    let frameId = 0;
+    let lastScrollY = window.scrollY || window.pageYOffset;
+    let velocity = 0;
+
+    const updatePhotoMotion = () => {
+      frameId = 0;
+      const scrollY = window.scrollY || window.pageYOffset;
+      const scrollDelta = scrollY - lastScrollY;
+      lastScrollY = scrollY;
+      velocity += (scrollDelta - velocity) * 0.14;
+
+      const motion = Math.min(Math.abs(velocity), 28);
+      const photos = document.querySelectorAll(".work-item img");
+
+      photos.forEach((photo) => {
+        if (getComputedStyle(photo).opacity === "0") {
+          photo.style.transform = "";
+          photo.style.filter = "";
+          return;
+        }
+
+        const bounds = photo.getBoundingClientRect();
+        const isVisible = bounds.bottom > 0 && bounds.top < window.innerHeight;
+        if (!isVisible) return;
+
+        const centerOffset =
+          (bounds.top + bounds.height / 2 - window.innerHeight / 2) /
+          window.innerHeight;
+        const shift = Math.max(-34, Math.min(34, centerOffset * -36));
+        const scale = 1.018 + motion * 0.0016;
+        const blur = motion > 7 ? Math.min(0.65, motion / 42) : 0;
+
+        photo.classList.add("work-photo-animated");
+        photo.style.transform = `translate3d(0, ${shift.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+        photo.style.filter = blur ? `blur(${blur.toFixed(2)}px)` : "";
+      });
+    };
+
+    const schedulePhotoMotion = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(updatePhotoMotion);
+    };
+
+    schedulePhotoMotion();
+    window.addEventListener("scroll", schedulePhotoMotion, { passive: true });
+    window.addEventListener("resize", schedulePhotoMotion);
+
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", schedulePhotoMotion);
+      window.removeEventListener("resize", schedulePhotoMotion);
+      document.querySelectorAll(".work-item img").forEach((photo) => {
+        photo.style.transform = "";
+        photo.style.filter = "";
+      });
+    };
+  }, [galleryItems.length]);
+
   return (
     <>
       <section className="work-hero">
