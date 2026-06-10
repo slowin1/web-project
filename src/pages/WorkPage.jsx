@@ -67,8 +67,7 @@ export default function WorkPage() {
       <div className="container">
         {galleryItems.map((item, index) => (
           <div
-            className="work-item-row"
-            id={`work-item-row-${index + 1}`}
+            className={`work-item-row ${index % 2 === 0 ? "is-left" : "is-right"}`}
             key={item.id || item.slug || `${item.title}-${index}`}
           >
             <div className="work-item-frame">

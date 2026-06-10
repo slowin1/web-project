@@ -108,14 +108,11 @@
   align-items: flex-start;
 }
 
-#work-item-row-1,
-#work-item-row-3,
-#work-item-row-5 {
+.work-item-row.is-left {
   justify-content: flex-start;
 }
 
-#work-item-row-2,
-#work-item-row-4 {
+.work-item-row.is-right {
   justify-content: flex-end;
 }
 

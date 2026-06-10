@@ -455,6 +455,7 @@ class WorkHeroCube {
 // scroll-driven image distortion effect
 class WorkDistortion {
   constructor() {
+    this.maxDistortionItems = 24;
     this.scrollVelocity = 0;
     this.smoothVelocity = 0;
     this.mediaStore = [];
@@ -546,15 +547,19 @@ class WorkDistortion {
   createMeshes() {
     const buildId = ++this.meshBuildId;
     const scrollY = window.scrollY || window.pageYOffset;
-    const media = [...document.querySelectorAll(".work-item img")];
+    const allMedia = [...document.querySelectorAll(".work-item img")];
+    const media = allMedia.slice(0, this.maxDistortionItems);
 
     if (this.isMobile || !this.renderer) {
-      media.forEach((img) => {
+      allMedia.forEach((img) => {
         img.style.opacity = "1";
       });
       return;
     }
 
+    allMedia.slice(this.maxDistortionItems).forEach((img) => {
+      img.style.opacity = "1";
+    });
     this.updateRendererVisibility();
 
     Promise.all(media.map((img) => this.loadTextureSource(img))).then((loadedImages) => {
@@ -596,6 +601,8 @@ class WorkDistortion {
       if (this.mediaStore.length === 0 && this.renderer) {
         this.renderer.domElement.style.display = "none";
       }
+
+      this.updateRendererVisibility();
     });
   }
 

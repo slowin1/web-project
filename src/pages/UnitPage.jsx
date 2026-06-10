@@ -95,8 +95,12 @@ export default function UnitPage() {
       return [];
     }
 
-    return Array.isArray(currentService.images) && currentService.images.length > 0
-      ? currentService.images.slice(0, 7)
+    const images = Array.isArray(currentService.images)
+      ? currentService.images.filter(Boolean)
+      : [];
+
+    return images.length > 0
+      ? images
       : [currentService.image || FALLBACK_SERVICE_IMAGE];
   }, [currentService]);
 
@@ -298,7 +302,9 @@ export default function UnitPage() {
       <div
         className="service-gallery-scroll"
         ref={scrollGalleryRef}
-        style={{ "--service-gallery-steps": Math.max(serviceImages.length, 2) }}
+        style={{
+          "--service-gallery-steps": Math.max(serviceImages.length, 2),
+        }}
       >
       <section className="service-hero" ref={heroRef}>
         <div className="service-hero-col service-gallery">
