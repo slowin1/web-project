@@ -415,17 +415,15 @@ export default function UnitPage() {
           <div className="related-services-header">
             <h3>Related Services</h3>
           </div>
-          <div className="related-services-container">
-            <div className="container">
-              {relatedServices.map((service) => (
-                <Product
-                  key={service.id}
-                  service={service}
-                  serviceIndex={service.id}
-                  showAddToCart={true}
-                />
-              ))}
-            </div>
+          <div className="related-services-grid">
+            {relatedServices.map((service) => (
+              <Product
+                key={service.id}
+                service={service}
+                serviceIndex={service.id}
+                showAddToCart={true}
+              />
+            ))}
           </div>
         </div>
       </section>

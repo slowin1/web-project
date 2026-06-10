@@ -345,25 +345,47 @@
 .related-services {
     position: relative;
     width: 100%;
-    height: 100%;
-    overflow: hidden;
-    padding: 4rem 0;
+    overflow: visible;
+    padding: 4rem 0 5rem;
 }
 
 .related-services > .container {
     margin-top: 2rem;
+    width: min(100% - 4rem, 1480px);
+    margin-inline: auto;
     padding: 0;
 }
 
 .related-services .related-services-header {
     width: 100%;
-    padding: 0 2rem;
+    padding: 0;
+    margin-bottom: 2rem;
 }
 
-.related-services-container .container {
+.related-services-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2rem;
+}
+
+.related-services-grid .product-card {
+    min-width: 0;
+}
+
+.related-services-grid .product-image {
+    height: clamp(18rem, 28vw, 28rem);
+}
+
+.related-services-grid .product-info {
+    min-height: 9rem;
+}
+
+.related-services-grid .product-header {
+    align-items: flex-start;
+}
+
+.related-services-grid .product-name {
+    overflow-wrap: anywhere;
 }
 
 .specialists-page .specialist-card {
@@ -804,8 +826,12 @@
         flex-direction: column-reverse !important;
     }
 
-    .related-services-container .container {
-        grid-template-columns: repeat(3, 1fr);
+    .related-services > .container {
+        width: min(100% - 3rem, 1480px);
+    }
+
+    .related-services-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .specialist-detail-layout,
@@ -829,8 +855,21 @@
 }
 
 @media (max-width: 768px) {
-    .related-services-container .container {
-        grid-template-columns: repeat(2, 1fr);
+    .related-services > .container {
+        width: min(100% - 2rem, 1480px);
+    }
+
+    .related-services-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .related-services-grid .product-image {
+        height: clamp(16rem, 56vw, 24rem);
+    }
+
+    .related-services-grid .product-info {
+        min-height: auto;
     }
 
     .specialist-detail-shell {
@@ -852,8 +891,12 @@
 }
 
 @media (max-width: 480px) {
-    .related-services-container .container {
+    .related-services-grid {
         grid-template-columns: 1fr;
+    }
+
+    .related-services-grid .product-image {
+        height: 22rem;
     }
 }
 
