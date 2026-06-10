@@ -16,13 +16,13 @@ const CONFIG = {
 let currentTheme = "light";
 
 const MENU_ITEMS = [
-  { label: "Главная", icon: "compass-sharp", href: "/" },
+  { label: "Главная", icon: "compass-sharp", href: () => getHomeHref() },
   { label: "Услуги", icon: "cube-sharp", href: "/lab" },
-  { label: "Работы", icon: "laptop-sharp", href: "/work" },
-  { label: "Проекты", icon: "flash-sharp", href: "/project" },
+  { label: "Галерея", icon: "images-sharp", href: "/work" },
+  { label: "Статьи", icon: "newspaper-sharp", href: "/project" },
   { label: "Контакты", icon: "paper-plane-sharp", href: "/contact" },
-  { label: "Регистрация", icon: "log-in-outline", href: "/LogIn" },
-  { label: "Еще чето", icon: "log-in-outline", href: "/LogIn" },
+  { label: "Авторизация", icon: "log-in-outline", href: "/LogIn" },
+  { label: "Профиль", icon: "person-circle-outline", href: () => getProfileHref() },
 ];
 
 let isOpen = false;
@@ -65,8 +65,10 @@ document.addEventListener("DOMContentLoaded", () => {
   gsap.set(joystick, { scale: 0, x: 0, y: 0 });
   gsap.set([menuOverlayNav, menuOverlayFooter], { opacity: 0 });
 
-  MENU_ITEMS.forEach((item, index) => {
-    const segment = createSegment(item, index, MENU_ITEMS.length);
+  const menuItems = MENU_ITEMS.map(resolveMenuItem);
+
+  menuItems.forEach((item, index) => {
+    const segment = createSegment(item, index, menuItems.length);
 
     segment.addEventListener("mouseenter", () => {
       if (isOpen) new Audio("/sfx/menu-select.mp3").play().catch(() => {});
@@ -106,6 +108,61 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   window.addEventListener("resize", resizeHandler);
 });
+
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function getStoredRole() {
+  const user = getStoredUser();
+  const token = localStorage.getItem("authToken") || localStorage.getItem("adminToken");
+
+  if (user?.role !== undefined && user?.role !== null) {
+    return String(user.role).toLowerCase();
+  }
+
+  try {
+    const payloadBase64 = token?.split(".")[1];
+    if (!payloadBase64) return "";
+    const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson);
+    const roleClaim = payload?.role ?? payload?.Role;
+    return String(roleClaim || "").toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function getProfileHref() {
+  const role = getStoredRole();
+  const user = getStoredUser();
+
+  if (role === "4" || role === "admin" || user?.userName?.toLowerCase() === "admin") {
+    return "/admin-profile";
+  }
+
+  if (role === "2" || role === "specialist") {
+    return "/specialist-profile";
+  }
+
+  return "/client-profile";
+}
+
+function getHomeHref() {
+  const profileHref = getProfileHref();
+  return profileHref === "/client-profile" ? "/" : profileHref;
+}
+
+function resolveMenuItem(item) {
+  return {
+    ...item,
+    href: typeof item.href === "function" ? item.href() : item.href,
+  };
+}
 
 // utility - check if link points to current page
 function isSamePage(href) {

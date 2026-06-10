@@ -273,6 +273,36 @@ function isSpecialistSession() {
   return false;
 }
 
+function getProfileRoute() {
+  if (isAdminSession()) return "/admin-profile";
+  if (isSpecialistSession()) return "/specialist-profile";
+  return "/client-profile";
+}
+
+function RoleHomeRoute() {
+  if (isAdminSession() || isSpecialistSession()) {
+    return <Navigate to={getProfileRoute()} replace />;
+  }
+
+  return <HomePage />;
+}
+
+function ClientProfileRoute() {
+  if (isAdminSession() || isSpecialistSession()) {
+    return <Navigate to={getProfileRoute()} replace />;
+  }
+
+  return (
+    <Layout>
+      <RoutedPage
+        title="Profile"
+        modulePaths={PROFILE_MODULES}
+        component={ProfilePage}
+        clearOverflow
+      />
+    </Layout>
+  );
+}
 
 function AdminRoute() {
   if (!isAdminSession()) {
@@ -446,14 +476,7 @@ function App() {
           path="/"
           element={
             <Layout>
-              {/* If admin: send to /admin to avoid profile/admin route conflicts */}
-              {isAdminSession() ? (
-                <Navigate to="/admin" replace />
-              ) : isSpecialistSession() ? (
-                <Navigate to="/specialist-profile" replace />
-              ) : (
-                <HomePage />
-              )}
+              <RoleHomeRoute />
             </Layout>
           }
         />
@@ -463,7 +486,7 @@ function App() {
           path="/index"
           element={
             <Layout>
-              <HomePage />
+              <RoleHomeRoute />
             </Layout>
           }
         />
@@ -471,7 +494,7 @@ function App() {
           path="/index.html"
           element={
             <Layout>
-              <HomePage />
+              <RoleHomeRoute />
             </Layout>
           }
         />
@@ -595,19 +618,16 @@ function App() {
         <Route
           path="/profile"
           element={
-            <Layout>
-              {isSpecialistSession() ? (
-                <Navigate to="/specialist-profile" replace />
-              ) : (
-                <RoutedPage
-                  title="Profile"
-                  modulePaths={PROFILE_MODULES}
-                  component={ProfilePage}
-                  clearOverflow
-                />
-              )}
-            </Layout>
+            <Navigate to={getProfileRoute()} replace />
           }
+        />
+        <Route
+          path="/client-profile"
+          element={<ClientProfileRoute />}
+        />
+        <Route
+          path="/admin-profile"
+          element={<Navigate to="/admin" replace />}
         />
         <Route path="/specialist-profile" element={<SpecialistRoute />} />
         <Route path="/admin" element={<AdminRoute />}>
