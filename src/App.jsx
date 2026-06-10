@@ -279,14 +279,6 @@ function getProfileRoute() {
   return "/client-profile";
 }
 
-function RoleHomeRoute() {
-  if (isAdminSession() || isSpecialistSession()) {
-    return <Navigate to={getProfileRoute()} replace />;
-  }
-
-  return <HomePage />;
-}
-
 function ClientProfileRoute() {
   if (isAdminSession() || isSpecialistSession()) {
     return <Navigate to={getProfileRoute()} replace />;
@@ -476,7 +468,7 @@ function App() {
           path="/"
           element={
             <Layout>
-              <RoleHomeRoute />
+              <HomePage />
             </Layout>
           }
         />
@@ -486,7 +478,7 @@ function App() {
           path="/index"
           element={
             <Layout>
-              <RoleHomeRoute />
+              <HomePage />
             </Layout>
           }
         />
@@ -494,7 +486,7 @@ function App() {
           path="/index.html"
           element={
             <Layout>
-              <RoleHomeRoute />
+              <HomePage />
             </Layout>
           }
         />

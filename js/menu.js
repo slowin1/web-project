@@ -16,7 +16,7 @@ const CONFIG = {
 let currentTheme = "light";
 
 const MENU_ITEMS = [
-  { label: "Главная", icon: "compass-sharp", href: () => getHomeHref() },
+  { label: "Главная", icon: "compass-sharp", href: "/" },
   { label: "Услуги", icon: "cube-sharp", href: "/lab" },
   { label: "Галерея", icon: "images-sharp", href: "/work" },
   { label: "Статьи", icon: "newspaper-sharp", href: "/project" },
@@ -150,11 +150,6 @@ function getProfileHref() {
   }
 
   return "/client-profile";
-}
-
-function getHomeHref() {
-  const profileHref = getProfileHref();
-  return profileHref === "/client-profile" ? "/" : profileHref;
 }
 
 function resolveMenuItem(item) {
