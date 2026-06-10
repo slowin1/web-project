@@ -418,6 +418,353 @@
   gap: 2rem;
 }
 
+.specialists-page .service-hero.specialist-hero {
+  position: relative;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.specialists-page .service-hero.specialist-hero .service-meta-container {
+  padding: 6.25rem 2rem 1.25rem;
+}
+
+.specialists-page .service-hero.specialist-hero .service-meta-header h3 {
+  font-size: clamp(2.35rem, 7vw, 6.75rem);
+  line-height: 0.9;
+  max-width: 11ch;
+}
+
+.specialists-page .service-hero.specialist-hero .service-meta-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.specialists-page .service-hero.specialist-hero .service-meta-buttons a,
+.specialists-page .service-hero.specialist-hero .service-meta-buttons button {
+  min-width: min(100%, 12rem);
+}
+
+.specialist-detail-shell {
+  width: min(100%, 1240px);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2.5rem) 2rem 4rem;
+}
+
+.specialist-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.38fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.specialist-profile-panel,
+.specialist-services-panel,
+.specialist-reviews-section,
+.specialist-review-form-card,
+.specialist-review-card,
+.specialist-empty-reviews {
+  border: 1px solid color-mix(in srgb, currentColor 13%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, currentColor 5%, transparent), transparent 58%),
+    color-mix(in srgb, var(--bg_lab) 94%, currentColor 6%);
+  border-radius: 8px;
+}
+
+.specialist-profile-panel {
+  position: sticky;
+  top: 1rem;
+  overflow: hidden;
+}
+
+.specialist-detail-image {
+  aspect-ratio: 4 / 5;
+  min-height: 24rem;
+  overflow: hidden;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.specialist-detail-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.specialist-profile-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.specialist-profile-copy h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: 0.9;
+}
+
+.specialist-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.specialist-stats div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.specialist-stats strong {
+  font-family: var(--type-1, inherit);
+  font-size: clamp(1.25rem, 2vw, 1.9rem);
+  line-height: 1;
+}
+
+.specialist-stats span {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  opacity: 0.68;
+}
+
+.specialist-review-workspace {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.specialist-services-panel {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.24fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.25rem;
+  align-items: center;
+}
+
+.specialist-services-panel h3 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 5rem);
+  line-height: 0.9;
+}
+
+.specialist-services-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+.specialist-services-chips a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 999px;
+  color: inherit;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.specialist-services-chips a:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  transform: translateY(-1px);
+}
+
+.specialist-reviews-section {
+  padding: clamp(1rem, 2.2vw, 1.5rem);
+}
+
+.specialist-reviews-head,
+.specialist-review-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.specialist-reviews-head {
+  margin-bottom: 1rem;
+}
+
+.specialist-reviews-head h3 {
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 5.8rem);
+  line-height: 0.85;
+}
+
+.specialist-review-summary {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+  margin-left: auto;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+}
+
+.specialist-review-summary span,
+.specialist-review-rating {
+  color: #c8a24f;
+  letter-spacing: 0.08em;
+}
+
+.specialist-review-summary small {
+  opacity: 0.65;
+}
+
+.specialist-reviews-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.38fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.specialist-reviews-list {
+  display: grid;
+  gap: 1rem;
+  max-height: 32rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.specialist-review-card,
+.specialist-review-form-card {
+  padding: 1rem;
+}
+
+.specialist-review-card {
+  display: grid;
+  gap: 0.8rem;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.specialist-review-card:hover {
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  transform: translateY(-1px);
+}
+
+.specialist-review-author {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.specialist-review-author span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 2.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  color: var(--bg_lab);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.specialist-review-author strong {
+  overflow-wrap: anywhere;
+}
+
+.specialist-review-card p,
+.specialist-empty-reviews p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.specialist-review-card time,
+.specialist-review-message {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.85rem;
+}
+
+.specialist-review-message {
+  margin: 0 0 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.specialist-review-message.is-error {
+  color: #ff8f8f;
+}
+
+.specialist-review-message.is-success {
+  color: #8ff0ba;
+}
+
+.specialist-review-form-card h4 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.4rem, 2.8vw, 2.2rem);
+  line-height: 0.95;
+}
+
+.specialist-review-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.specialist-review-form label {
+  display: grid;
+  gap: 0.45rem;
+  opacity: 0.78;
+  font-size: 0.88rem;
+}
+
+.specialist-review-form select,
+.specialist-review-form textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg_lab) 88%, currentColor 12%);
+  color: inherit;
+  outline: none;
+}
+
+.specialist-review-form select {
+  min-height: 2.8rem;
+  padding: 0 0.8rem;
+}
+
+.specialist-review-form textarea {
+  resize: vertical;
+  min-height: 8rem;
+  padding: 0.8rem;
+}
+
+.specialist-review-form select:focus,
+.specialist-review-form textarea:focus {
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+.specialist-empty-reviews {
+  display: grid;
+  min-height: 14rem;
+  align-content: center;
+  gap: 0.7rem;
+  padding: 1.25rem;
+  border-style: dashed;
+}
+
+.specialist-empty-reviews strong {
+  font-size: clamp(1.35rem, 3vw, 2.4rem);
+  line-height: 1;
+}
+
 @media (max-width: 1024px) {
     .service-hero {
         flex-direction: column;
@@ -460,11 +807,47 @@
     .related-services-container .container {
         grid-template-columns: repeat(3, 1fr);
     }
+
+    .specialist-detail-layout,
+    .specialist-services-panel,
+    .specialist-reviews-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .specialist-profile-panel {
+        position: relative;
+        top: auto;
+    }
+
+    .specialist-detail-image {
+        min-height: 20rem;
+    }
+
+    .specialist-services-chips {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 768px) {
     .related-services-container .container {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .specialist-detail-shell {
+        padding-inline: 1rem;
+    }
+
+    .specialists-page .service-hero.specialist-hero .service-meta-container {
+        padding: 5.5rem 1rem 1rem;
+    }
+
+    .specialist-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .specialist-reviews-head,
+    .specialist-review-top {
+        align-items: flex-start;
     }
 }
 
