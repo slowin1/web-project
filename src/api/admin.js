@@ -210,6 +210,8 @@ export const specialistWorkSchedulesAPI = {
 export const specialistReviewsAPI = {
   getAll: () => apiRequest(ENDPOINTS.specialistReviews),
   getById: (id) => apiRequest(`${ENDPOINTS.specialistReviews}/${id}`),
+  getBySpecialist: (specialistId) =>
+    apiRequest(`${ENDPOINTS.specialistReviews}/specialist/${specialistId}`),
   create: (data) =>
     apiRequest(ENDPOINTS.specialistReviews, { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) =>
