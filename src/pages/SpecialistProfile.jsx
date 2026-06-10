@@ -108,6 +108,7 @@ function bookingBelongsToSpecialist(raw, specialist, servicesById) {
   return (
     bookingSpecialistId === specialistId ||
     String(parseField(description, "Специалист")).trim().toLowerCase() === String(specialistName).trim().toLowerCase() ||
+    String(raw.bookingName ?? raw.BookingName ?? "").trim().toLowerCase().includes(String(specialistName).trim().toLowerCase()) ||
     String(service?.nameOfMaster ?? service?.specialist ?? service?.NameOfMaster ?? "").trim().toLowerCase() === String(specialistName).trim().toLowerCase()
   );
 }
@@ -187,6 +188,9 @@ export default function SpecialistProfile() {
         specialistBookings = await bookingsAPI.getBySpecialist(currentSpecialist.id ?? currentSpecialist.Id);
       } catch (specialistBookingsError) {
         console.warn("Specialist bookings endpoint unavailable:", specialistBookingsError);
+      }
+
+      if (!Array.isArray(specialistBookings) || specialistBookings.length === 0) {
         const allBookings = await bookingsAPI.getAll();
         specialistBookings = (Array.isArray(allBookings) ? allBookings : []).filter((booking) =>
           bookingBelongsToSpecialist(booking, currentSpecialist, servicesById)
@@ -203,7 +207,7 @@ export default function SpecialistProfile() {
       setSpecialist(currentSpecialist);
       setBookings((Array.isArray(specialistBookings) ? specialistBookings : []).map((booking) =>
         normalizeBooking(booking, servicesById)
-      ));
+      ).sort((a, b) => new Date(b.bookingDate || b.date || 0) - new Date(a.bookingDate || a.date || 0)));
       setCompleted(Array.isArray(completedServices) ? completedServices : []);
     } catch (loadError) {
       console.error("Specialist profile load error:", loadError);

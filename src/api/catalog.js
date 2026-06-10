@@ -21,15 +21,17 @@ export function slugify(value) {
     .replace(/-+/g, "-");
 }
 
-export function mapApiServiceToUi(service, imageByServiceId = {}) {
+export function mapApiServiceToUi(service, imageByServiceId = {}, specialistByName = {}) {
   const api = normalizeService(service);
   const images = imageByServiceId[api.id] || [];
   const image = images[0] || FALLBACK_IMAGE;
+  const specialist = specialistByName[api.nameOfMaster] || null;
 
   return {
     id: api.id,
     name: api.nameOfService,
     price: String(api.priceOfService ?? ""),
+    specialistId: specialist?.id || specialist?.Id || "",
     specialist: api.nameOfMaster || "Специалист не указан",
     specialistSlug: slugify(api.nameOfMaster || "specialist"),
     duration: `${api.durationOfService || 0} мин`,
@@ -68,15 +70,24 @@ export function mapApiSpecialistToUi(specialist, services = []) {
 }
 
 export async function fetchCatalogBundle() {
-  const [servicesRaw, categoriesRaw, imagesRaw] = await Promise.all([
+  const [servicesRaw, categoriesRaw, imagesRaw, specialistsRaw] = await Promise.all([
     servicesAPI.getAll(),
     serviceCategoriesAPI.getAll(),
     serviceImagesAPI.getAll().catch(() => []),
+    specialistsAPI.getAll().catch(() => []),
   ]);
 
   const servicesList = Array.isArray(servicesRaw) ? servicesRaw : [];
   const categoriesList = Array.isArray(categoriesRaw) ? categoriesRaw : [];
   const imagesList = Array.isArray(imagesRaw) ? imagesRaw : [];
+  const specialistsList = Array.isArray(specialistsRaw) ? specialistsRaw : [];
+  const specialistByName = specialistsList.reduce((acc, specialist) => {
+    const name = specialist.fullName ?? specialist.FullName ?? "";
+    if (name) {
+      acc[name] = specialist;
+    }
+    return acc;
+  }, {});
 
   const imageByServiceId = imagesList.reduce((acc, image) => {
     const sid = image.serviceId;
@@ -93,7 +104,7 @@ export async function fetchCatalogBundle() {
 
   return {
     services: servicesList.map((service) =>
-      mapApiServiceToUi(service, imageByServiceId),
+      mapApiServiceToUi(service, imageByServiceId, specialistByName),
     ),
     categories: categoriesList.map(mapApiCategoryToUi),
   };

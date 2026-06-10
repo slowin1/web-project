@@ -196,6 +196,7 @@ export default function ServiceBooking({ service, onClose }) {
           selectedTime,
         }),
         clientUserId,
+        specialistId: service.specialistId || null,
         bookingDate: `${bookingDate}T00:00:00`,
         bookingTime,
       };
@@ -231,6 +232,7 @@ export default function ServiceBooking({ service, onClose }) {
         serviceId: service.id,
         serviceName: service.name,
         specialist: service.specialist,
+        specialistId: service.specialistId || null,
         date: bookingDate,
         time: selectedTime,
         duration: service.duration,
