@@ -116,7 +116,7 @@
 
 .service-gallery-scroll {
     position: relative;
-    min-height: calc(var(--service-gallery-steps, 2) * 100svh);
+    min-height: calc((var(--service-gallery-steps, 2) + 0.35) * 100svh);
 }
 
 .service-hero-col {
@@ -176,16 +176,26 @@
     position: absolute;
     left: 2rem;
     bottom: 2rem;
-    display: flex;
-    align-items: flex-end;
+    width: calc(100% - 4rem);
+    max-width: min(42rem, calc(100% - 4rem));
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(2.75rem, 3.5rem));
+    justify-content: start;
+    align-items: end;
     gap: 0.65rem;
     z-index: 20;
+    max-height: 9.8rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.15rem 0.15rem 0.45rem;
+    scrollbar-width: thin;
 }
 
 .service-gallery-thumb {
     position: relative;
-    width: 3.5rem;
-    height: 4.4rem;
+    width: 100%;
+    aspect-ratio: 35 / 44;
+    min-height: 0;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.55);
     border-radius: 10px;
@@ -422,12 +432,15 @@
     .service-gallery-thumbs {
         bottom: 2rem;
         left: 2rem;
+        width: calc(100% - 4rem);
+        max-width: calc(100% - 4rem);
+        grid-template-columns: repeat(auto-fit, minmax(2.45rem, 2.75rem));
         gap: 0.45rem;
+        max-height: 7.75rem;
     }
 
     .service-gallery-thumb {
-        width: 2.75rem;
-        height: 3.45rem;
+        width: 100%;
     }
 
     .service-details {
