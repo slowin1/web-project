@@ -370,22 +370,94 @@
 
 .related-services-grid .product-card {
     min-width: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: var(--card-bg);
+    border: 1px solid var(--base-200);
+    border-radius: 10px;
+    transition:
+        transform 0.3s ease,
+        border-color 0.3s ease;
+}
+
+.related-services-grid .product-card:hover {
+    border-color: var(--base-400);
+    transform: translateY(-4px);
+}
+
+.related-services-grid .product-card-link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: var(--card-text);
+    text-decoration: none;
 }
 
 .related-services-grid .product-image {
+    width: 100%;
     height: clamp(18rem, 28vw, 28rem);
+    flex-shrink: 0;
+    overflow: hidden;
+    background-color: var(--base-200);
+}
+
+.related-services-grid .product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.related-services-grid .product-card:hover .product-image img {
+    transform: scale(1.05);
 }
 
 .related-services-grid .product-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.75rem;
     min-height: 9rem;
+    padding: 1.5rem;
 }
 
 .related-services-grid .product-header {
+    display: flex;
+    justify-content: space-between;
     align-items: flex-start;
+    gap: 0.75rem;
 }
 
 .related-services-grid .product-name {
+    font-family: var(--type-1);
+    font-size: clamp(1rem, 1.25vw, 1.25rem);
+    font-weight: 500;
+    line-height: 1.1;
+    text-transform: uppercase;
     overflow-wrap: anywhere;
+}
+
+.related-services-grid .product-price {
+    flex-shrink: 0;
+    font-family: var(--type-3);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.related-services-grid .product-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: auto;
+}
+
+.related-services-grid .product-specialist,
+.related-services-grid .product-duration {
+    font-family: var(--type-2);
+    font-size: 0.875rem;
+    color: var(--base-500);
 }
 
 .specialists-page .specialist-card {
