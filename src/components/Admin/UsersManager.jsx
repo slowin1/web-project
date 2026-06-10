@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usersAPI } from "../../api/admin";
+import useDebounce from "../../hooks/useDebounce";
 import { useAdminText } from "./adminI18n";
 
 const ROLE_ORDER = ["Admin", "Specialist", "Client", "Guest"];
@@ -46,8 +47,10 @@ export default function UsersManager() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [details, setDetails] = useState(null);
+  const debouncedSearchQuery = useDebounce(searchQuery, 200);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -91,10 +94,26 @@ export default function UsersManager() {
     };
   }, [selectedUserId]);
 
-  const selectedUser = useMemo(() => {
-    if (!selectedUserId) return null;
-    return users.find((u) => u.id === selectedUserId) || null;
-  }, [selectedUserId, users]);
+  const filteredUsers = useMemo(() => {
+    const query = debouncedSearchQuery.trim().toLowerCase();
+    if (!query) return users;
+
+    return users.filter((user) => {
+      const searchable = [
+        user.firstName,
+        user.lastName,
+        user.userName,
+        user.email,
+        user.phone,
+        roleToUserRole(user.role),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  }, [debouncedSearchQuery, users]);
 
   const refreshSingle = useCallback(async () => {
     if (!selectedUserId) return;
@@ -193,12 +212,28 @@ export default function UsersManager() {
 
       <div className="users-layout">
         <div className="users-list">
-          <div className="admin-list-heading">{t.users.directory}</div>
+          <div className="users-list-head">
+            <div className="admin-list-heading">{t.users.directory}</div>
+            <div className="users-search">
+              <input
+                type="text"
+                placeholder={t.users.searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <div className="users-search-count">
+                {filteredUsers.length}/{users.length}
+              </div>
+            </div>
+          </div>
+
           {users.length === 0 ? (
             <p className="admin-hint">{t.users.empty}</p>
+          ) : filteredUsers.length === 0 ? (
+            <p className="admin-hint">{t.users.searchEmpty}</p>
           ) : (
             <ul className="users-ul">
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <li key={u.id}>
                   <button
                     type="button"
